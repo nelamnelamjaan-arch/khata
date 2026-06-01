@@ -32,7 +32,7 @@
   <title>smart_khata_manager</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Dev: monitor JS errors and network requests (check browser DevTools → Console) -->
+  <!-- Dev: log unexpected JS errors only (avoid noisy 404 spam in console) -->
   <script>
     window.addEventListener('error', function (event) {
       console.error('JavaScript Error Detected:', event.message, event.filename, event.lineno);
@@ -41,21 +41,6 @@
     window.addEventListener('unhandledrejection', function (event) {
       console.error('Unhandled Promise Rejection:', event.reason);
     });
-
-    const originalFetch = window.fetch;
-    window.fetch = function () {
-      const url = arguments[0];
-      console.log('Network request initiated:', url);
-      return originalFetch.apply(this, arguments).then(function (response) {
-        if (!response.ok) {
-          console.error('Network request failed:', url, response.status, response.statusText);
-        }
-        return response;
-      }).catch(function (error) {
-        console.error('Network request error:', url, error);
-        throw error;
-      });
-    };
   </script>
 </head>
 <body>
