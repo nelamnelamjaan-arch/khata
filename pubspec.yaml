@@ -1,0 +1,52 @@
+name: smart_khata_manager
+description: Offline-first Smart Khata Manager with hybrid OCR/AI and double-entry ledger.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── State Management ──────────────────────────────────────────────────────
+  get: ^4.7.2
+
+  # ── Firebase (Offline-First) ──────────────────────────────────────────────
+  firebase_core: ^4.9.0
+  cloud_firestore: ^6.4.1
+  firebase_auth: ^6.5.1
+
+  # ── Hybrid OCR / AI Engine ────────────────────────────────────────────────
+  google_mlkit_text_recognition: ^0.15.0   # ML Kit on-device OCR
+  google_generative_ai: ^0.4.7
+  camera: ^0.11.1
+  permission_handler: ^11.4.0
+
+  # ── Local Notifications (Payment Reminders) ───────────────────────────────
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.0
+  flutter_timezone: ^4.1.0
+
+  # ── Connectivity & Environment ────────────────────────────────────────────
+  connectivity_plus: ^6.1.4
+  flutter_dotenv: ^5.2.1
+
+  # ── Utilities ─────────────────────────────────────────────────────────────
+  intl: ^0.20.2
+  uuid: ^4.5.1
+  image_picker: ^1.1.2
+  path_provider: ^2.1.5
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - .env
