@@ -19,7 +19,6 @@ dependencies:
   firebase_core: ^4.9.0
   cloud_firestore: ^6.4.1
   firebase_auth: ^6.5.1
-  google_sign_in: ^6.2.2
 
   # ── Hybrid OCR / AI Engine ────────────────────────────────────────────────
   google_mlkit_text_recognition: ^0.15.0   # ML Kit on-device OCR
