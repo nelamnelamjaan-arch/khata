@@ -6,7 +6,13 @@ import 'package:smart_khata_manager/core/services/auth_service.dart';
 /// Redirects unauthenticated users to the auth screen.
 class AuthMiddleware extends GetMiddleware {
   @override
+  int? get priority => 1;
+
+  @override
   RouteSettings? redirect(String? route) {
+    if (!Get.isRegistered<AuthService>()) {
+      return const RouteSettings(name: AppRoutes.splash);
+    }
     if (!Get.find<AuthService>().isSignedIn) {
       return const RouteSettings(name: AppRoutes.auth);
     }
@@ -17,7 +23,13 @@ class AuthMiddleware extends GetMiddleware {
 /// Redirects authenticated users away from auth/sign-up screens.
 class GuestMiddleware extends GetMiddleware {
   @override
+  int? get priority => 1;
+
+  @override
   RouteSettings? redirect(String? route) {
+    if (!Get.isRegistered<AuthService>()) {
+      return const RouteSettings(name: AppRoutes.splash);
+    }
     if (Get.find<AuthService>().isSignedIn) {
       return const RouteSettings(name: AppRoutes.dashboard);
     }

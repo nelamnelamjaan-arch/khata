@@ -53,7 +53,11 @@ class AuthService extends GetxService {
     final user = _auth.currentUser;
     // Legacy builds used anonymous auth — sign out so users must use email/Google/phone.
     if (user != null && user.isAnonymous) {
-      await signOut();
+      try {
+        await signOut();
+      } catch (_) {
+        currentUser.value = null;
+      }
     } else {
       currentUser.value = user;
     }
