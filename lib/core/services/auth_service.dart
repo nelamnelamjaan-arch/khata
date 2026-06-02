@@ -50,8 +50,14 @@ class AuthService extends GetxService {
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   Future<AuthService> init() async {
-    currentUser.value = _auth.currentUser;
-    _auth.authStateChanges().listen((user) => currentUser.value = user);
+    final user = _auth.currentUser;
+    // Legacy builds used anonymous auth — sign out so users must use email/Google/phone.
+    if (user != null && user.isAnonymous) {
+      await signOut();
+    } else {
+      currentUser.value = user;
+    }
+    _auth.authStateChanges().listen((u) => currentUser.value = u);
     return this;
   }
 
