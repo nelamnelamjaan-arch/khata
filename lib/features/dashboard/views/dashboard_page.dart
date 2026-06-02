@@ -40,46 +40,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  void _showKhataPicker() {
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Khata Book Kholein',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              _KhataBookTile(
-                category: KhataCategory.lenay,
-                onTap: () {
-                  Navigator.pop(context);
-                  _openKhataBook(KhataCategory.lenay);
-                },
-              ),
-              const SizedBox(height: 8),
-              _KhataBookTile(
-                category: KhataCategory.denay,
-                onTap: () {
-                  Navigator.pop(context);
-                  _openKhataBook(KhataCategory.denay);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,11 +47,6 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: AppBar(
         title: const Text(AppConstants.appName),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.menu_book_outlined),
-            tooltip: 'Khata Books',
-            onPressed: _showKhataPicker,
-          ),
           PopupMenuButton<String>(
             tooltip: 'Account',
             onSelected: (value) async {
@@ -159,7 +114,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Do alag khata books — tap karein aur kaam karein',
+                  'Card par tap karein — khata book khul jayegi',
                   style: TextStyle(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 20),
@@ -210,12 +165,6 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                   ),
-                const SizedBox(height: 24),
-                FilledButton.icon(
-                  onPressed: () => Get.toNamed(AppRoutes.ledger),
-                  icon: const Icon(Icons.menu_book),
-                  label: const Text('Khata Book Kholein'),
-                ),
               ],
             );
           },
@@ -246,65 +195,29 @@ class _NetBalanceCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Net Balance',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                Text(label, style: TextStyle(fontSize: 12, color: color)),
+              ],
+            ),
             Text(
-              'Net Balance (Lenay − Denay)',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(label, style: TextStyle(color: color)),
-                Text(
-                  'Rs. ${net.abs().toStringAsFixed(0)}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Total Lenay: Rs. ${summary.totalLenay.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                Text(
-                  'Total Denay: Rs. ${summary.totalDenay.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ],
+              'Rs. ${net.abs().toStringAsFixed(0)}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: color,
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _KhataBookTile extends StatelessWidget {
-  const _KhataBookTile({required this.category, required this.onTap});
-
-  final KhataCategory category;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(category.title),
-      subtitle: Text(category.subtitle),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: category.color.withValues(alpha: 0.3)),
       ),
     );
   }
@@ -412,7 +325,7 @@ class _KhataBreakdownCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    '$partyCount ${partyCount == 1 ? 'naam' : 'naam'} — khata book kholein',
+                    '$partyCount naam',
                     style: TextStyle(
                       fontSize: 12,
                       color: color.withValues(alpha: 0.7),
@@ -467,4 +380,3 @@ class _BreakdownRow extends StatelessWidget {
     );
   }
 }
-
