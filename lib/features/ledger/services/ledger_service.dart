@@ -28,8 +28,12 @@ class LedgerService extends GetxService {
   FirebaseFirestore get _firestore {
     final db = _db;
     if (db == null) {
+      final firebase = Get.find<FirebaseService>();
+      final detail = firebase.initError.value ?? '';
       throw StateError(
-        'Firebase is not connected. Run: flutterfire configure',
+        detail.isNotEmpty
+            ? 'Firebase is not connected. $detail'
+            : 'Firebase is not connected. Run: flutterfire configure',
       );
     }
     return db;
@@ -45,9 +49,12 @@ class LedgerService extends GetxService {
 
   void _ensureReady() {
     if (!_isReady) {
-      throw StateError(
-        'Firebase is not connected. Run: flutterfire configure',
-      );
+      final firebase = Get.find<FirebaseService>();
+      final detail = firebase.initError.value?.trim();
+      final hint = detail != null && detail.isNotEmpty
+          ? detail
+          : 'Run: flutterfire configure. On Vercel, add your domain to Firebase Authorized domains.';
+      throw StateError('Firebase is not connected. $hint');
     }
   }
 

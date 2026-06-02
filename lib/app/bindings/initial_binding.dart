@@ -40,10 +40,13 @@ Future<void> initCoreServices() async {
     if (kDebugMode) print('NetworkService init: $e');
   }
 
-  try {
-    await Get.find<FirebaseService>().init();
-  } catch (e) {
-    if (kDebugMode) print('FirebaseService init: $e');
+  final firebase = Get.find<FirebaseService>();
+  if (!firebase.isFirestoreReady.value) {
+    try {
+      await firebase.initWithRetry(maxAttempts: 3);
+    } catch (e) {
+      if (kDebugMode) print('FirebaseService init: $e');
+    }
   }
 
   try {

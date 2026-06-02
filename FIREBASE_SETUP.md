@@ -39,6 +39,35 @@ Orange Firebase warning on dashboard should disappear.
 
 ---
 
+## Vercel + mobile browsers
+
+Firebase **web** config is compiled from `lib/firebase_options.dart` (not Vercel env vars). You do **not** need `FIREBASE_*` environment variables on Vercel for Firestore.
+
+**Required (Firebase Console):**
+
+1. [Firebase Console](https://console.firebase.google.com/) → project **khata-manager-ccf3a**
+2. **Authentication** → **Settings** → **Authorized domains**
+3. Add every host users open on phones:
+   - `your-app.vercel.app` (your real Vercel subdomain)
+   - Any custom domain (e.g. `khata.example.com`)
+   - `localhost` (local dev)
+
+**Mobile Safari / Chrome tips:**
+
+- Avoid **Private Browsing** (blocks IndexedDB / Firestore cache).
+- Allow **site data** / cookies for your Vercel URL.
+- If splash shows “Firebase connection failed”, tap **Retry** after checking network.
+
+**Redeploy after code changes:**
+
+```powershell
+git push origin main
+```
+
+Vercel rebuilds with `scripts/vercel-build.sh` (`flutter build web --release --base-href /`).
+
+---
+
 ## If `firebase login` fails
 
 1. Install Node.js from https://nodejs.org

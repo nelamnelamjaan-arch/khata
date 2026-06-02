@@ -19,7 +19,12 @@ class FirebaseService extends GetxService {
         options.projectId.contains('YOUR_');
   }
 
+  /// Idempotent init — safe to call from [main] and splash retry.
   Future<FirebaseService> init() async {
+    if (isFirestoreReady.value && _firestore != null) {
+      return this;
+    }
+
     final options = DefaultFirebaseOptions.currentPlatform;
 
     if (_isPlaceholderConfig(options)) {
@@ -32,21 +37,40 @@ class FirebaseService extends GetxService {
     }
 
     try {
-      await Firebase.initializeApp(options: options);
+      initError.value = null;
+
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(options: options);
+      }
 
       _firestore = FirebaseFirestore.instance;
 
-      if (!kIsWeb) {
+      if (kIsWeb) {
+        // Mobile Safari / strict networks: long-polling avoids WebChannel failures.
+        _firestore!.settings = const Settings(
+          persistenceEnabled: true,
+          webExperimentalAutoDetectLongPolling: true,
+        );
+      } else {
         _firestore!.settings = const Settings(
           persistenceEnabled: true,
           cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
         );
       }
 
-      await _firestore!.enableNetwork();
+      try {
+        await _firestore!.enableNetwork();
+      } catch (e) {
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print('Firestore enableNetwork (non-fatal): $e');
+        }
+      }
+
       isFirestoreReady.value = true;
 
-      if (kDebugMode) {
+      // Debug write test — desktop only; skipped on web (Safari/mobile can fail).
+      if (kDebugMode && !kIsWeb) {
         try {
           await _firestore!
               .collection('_connection_test')
@@ -58,15 +82,30 @@ class FirebaseService extends GetxService {
               'Run: firebase deploy --only firestore:rules';
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
       initError.value = e.toString();
       isFirestoreReady.value = false;
+      _firestore = null;
       if (kDebugMode) {
         // ignore: avoid_print
-        print('Firebase init failed: $e');
+        print('Firebase init failed: $e\n$stack');
       }
     }
     return this;
+  }
+
+  /// Retries init — used on splash when mobile networks are slow or flaky.
+  Future<bool> initWithRetry({int maxAttempts = 3}) async {
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      isFirestoreReady.value = false;
+      _firestore = null;
+      await init();
+      if (isFirestoreReady.value) return true;
+      if (attempt < maxAttempts) {
+        await Future<void>.delayed(Duration(seconds: attempt * 2));
+      }
+    }
+    return false;
   }
 
   Future<void> syncPendingWrites() async {
