@@ -5,6 +5,7 @@ import 'package:smart_khata_manager/core/config/app_constants.dart';
 import 'package:smart_khata_manager/core/services/firebase_service.dart';
 import 'package:smart_khata_manager/core/services/network_service.dart';
 import 'package:smart_khata_manager/core/theme/app_colors.dart';
+import 'package:smart_khata_manager/core/widgets/firebase_connection_panel.dart';
 import 'package:smart_khata_manager/features/dashboard/models/dashboard_summary.dart';
 import 'package:smart_khata_manager/features/ledger/services/ledger_service.dart';
 
@@ -52,22 +53,7 @@ class _DashboardPageState extends State<DashboardPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (Get.isRegistered<FirebaseService>())
-              Obx(() {
-                final firebase = Get.find<FirebaseService>();
-                if (firebase.isFirestoreReady.value) {
-                  return const SizedBox.shrink();
-                }
-                return Material(
-                  color: Colors.orange.shade50,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      firebase.initError.value ?? 'Connecting to Firebase…',
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                  ),
-                );
-              }),
+              const FirebaseConnectionPanel(),
             Expanded(
               child: StreamBuilder<DashboardSummary>(
                 stream: _summaryStream,

@@ -41,7 +41,8 @@ class _SplashPageState extends State<SplashPage> {
     }
 
     final firebase = Get.find<FirebaseService>();
-    final firebaseOk = await firebase.initWithRetry(maxAttempts: 3);
+    final firebaseOk = firebase.isFirestoreReady.value ||
+        await firebase.initWithRetry(maxAttempts: 3);
 
     if (!firebaseOk) {
       final detail = firebase.initError.value ?? 'Could not reach Firestore.';
