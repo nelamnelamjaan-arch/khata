@@ -11,27 +11,26 @@ import 'package:smart_khata_manager/features/ocr/services/ocr_service.dart';
 
 /// Registers GetX services synchronously — safe to call before [runApp].
 void registerCoreServices() {
-  if (!Get.isRegistered<NetworkService>()) {
-    Get.put<NetworkService>(NetworkService(), permanent: true);
+  void put<T extends GetxService>(T Function() factory, String label) {
+    if (Get.isRegistered<T>()) return;
+    try {
+      Get.put<T>(factory(), permanent: true);
+    } catch (e, stack) {
+      if (kDebugMode) print('$label registration failed: $e\n$stack');
+      throw StateError('$label: $e');
+    }
   }
-  if (!Get.isRegistered<FirebaseService>()) {
-    Get.put<FirebaseService>(FirebaseService(), permanent: true);
-  }
-  if (!Get.isRegistered<AuthService>()) {
-    Get.put<AuthService>(AuthService(), permanent: true);
-  }
-  if (!Get.isRegistered<AiService>()) {
-    Get.put<AiService>(AiService(), permanent: true);
-  }
-  if (!Get.isRegistered<NotificationService>()) {
-    Get.put<NotificationService>(NotificationService(), permanent: true);
-  }
-  if (!Get.isRegistered<OcrService>()) {
-    Get.put<OcrService>(OcrService(), permanent: true);
-  }
-  if (!Get.isRegistered<LedgerService>()) {
-    Get.put<LedgerService>(LedgerService(), permanent: true);
-  }
+
+  put<NetworkService>(() => NetworkService(), 'NetworkService');
+  put<FirebaseService>(() => FirebaseService(), 'FirebaseService');
+  put<AuthService>(() => AuthService(), 'AuthService');
+  put<AiService>(() => AiService(), 'AiService');
+  put<NotificationService>(
+    () => NotificationService(),
+    'NotificationService',
+  );
+  put<OcrService>(() => OcrService(), 'OcrService');
+  put<LedgerService>(() => LedgerService(), 'LedgerService');
 }
 
 /// Async initialization — Firebase, network, AI, notifications.
