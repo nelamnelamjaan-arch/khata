@@ -45,8 +45,11 @@ class PartyDetailPage extends GetView<PartyDetailController> {
               child: Row(
                 children: [
                   Text(
-                    'Har entry ka record',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    '${party.category.title} — entries',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: party.category.color,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   const Spacer(),
                   Text(

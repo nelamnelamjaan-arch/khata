@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:smart_khata_manager/features/ledger/controllers/party_detail_controller.dart';
 import 'package:smart_khata_manager/features/ledger/models/party.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction_type.dart';
+import 'package:smart_khata_manager/features/ledger/widgets/category_picker_sheet.dart';
 import 'package:smart_khata_manager/features/ledger/widgets/transaction_history_table.dart';
 import 'package:smart_khata_manager/features/ledger/widgets/transaction_type_selector.dart';
 
@@ -47,10 +48,19 @@ class _AddPartyTransactionSheetState extends State<AddPartyTransactionSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final amount = double.parse(_amountController.text.trim());
+    final confirmed = await confirmEntryCategory(
+      context,
+      category: widget.party.category,
+      partyName: widget.party.name,
+      amount: amount,
+    );
+    if (!confirmed || !mounted) return;
+
     setState(() => _isSaving = true);
     try {
       await widget.controller.addTransaction(
-        amount: double.parse(_amountController.text.trim()),
+        amount: amount,
         type: _type,
         date: _selectedDate,
         note: _noteController.text.trim(),

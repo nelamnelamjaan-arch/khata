@@ -8,6 +8,7 @@ import 'package:smart_khata_manager/core/services/firebase_service.dart';
 import 'package:smart_khata_manager/core/services/notification_service.dart';
 import 'package:smart_khata_manager/features/dashboard/models/dashboard_summary.dart';
 import 'package:smart_khata_manager/features/ledger/models/khata_category.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_migration.dart';
 import 'package:smart_khata_manager/features/ledger/models/party.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction_type.dart';
@@ -177,14 +178,7 @@ class LedgerService extends GetxService {
     _validateAmount(amount);
 
     final txId = id ?? _uuid.v4();
-    final transaction = TransactionModel(
-      id: txId,
-      partyId: partyId,
-      amount: amount,
-      type: type,
-      date: date,
-      note: note,
-    );
+    TransactionModel? saved;
 
     await _firestore
         .runTransaction((firestoreTx) async {
@@ -201,9 +195,19 @@ class LedgerService extends GetxService {
           'Ye entry "${party.category.title}" khata ke liye nahi hai.',
         );
       }
-      final newBalance = party.currentBalance + transaction.balanceDelta;
 
-      firestoreTx.set(_transactionsRef.doc(txId), transaction.toMap());
+      saved = TransactionModel(
+        id: txId,
+        partyId: partyId,
+        amount: amount,
+        type: type,
+        bookCategory: party.category,
+        date: date,
+        note: note,
+      );
+      final newBalance = party.currentBalance + saved!.balanceDelta;
+
+      firestoreTx.set(_transactionsRef.doc(txId), saved!.toMap());
       firestoreTx.update(partyRef, {'currentBalance': newBalance});
     })
         .timeout(
@@ -214,6 +218,7 @@ class LedgerService extends GetxService {
     );
 
     // Receivable entry (Debit) → schedule payment-due reminder.
+    final transaction = saved!;
     if (type.isReceivableEntry) {
       await _scheduleReceivableReminder(transaction);
     }
@@ -565,5 +570,45 @@ class LedgerService extends GetxService {
     try {
       await _notifications?.cancelTransactionReminder(transaction.id);
     } catch (_) {}
+  }
+
+  /// Optional: purane docs mein missing `category` / `bookCategory` add karein.
+  /// Sirf nayi fields likhta hai — existing data delete ya overwrite nahi hota.
+  Future<({int parties, int transactions})> backfillLegacyFields() async {
+    _ensureReady();
+    var partyUpdates = 0;
+    var txUpdates = 0;
+
+    final partySnap = await _partiesRef.get();
+    final partiesById = <String, Party>{};
+
+    for (final doc in partySnap.docs) {
+      final data = doc.data();
+      final party = Party.fromFirestore(doc);
+      partiesById[doc.id] = party;
+
+      if (KhataMigration.partyNeedsBackfill(data)) {
+        await doc.reference.update({'category': party.category.value});
+        partyUpdates++;
+      }
+    }
+
+    final txSnap = await _transactionsRef.get();
+    for (final doc in txSnap.docs) {
+      final data = doc.data();
+      if (!KhataMigration.transactionNeedsBackfill(data)) continue;
+
+      final tx = TransactionModel.fromFirestore(doc);
+      final party = partiesById[tx.partyId];
+      final category = KhataMigration.resolveBookCategory(
+        data,
+        tx.type,
+        partyCategory: party?.category,
+      );
+      await doc.reference.update({'bookCategory': category.value});
+      txUpdates++;
+    }
+
+    return (parties: partyUpdates, transactions: txUpdates);
   }
 }

@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:smart_khata_manager/features/ledger/controllers/ledger_controller.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_calculations.dart';
 import 'package:smart_khata_manager/features/ledger/models/party.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction_type.dart';
@@ -18,7 +19,10 @@ class PartyDetailController extends GetxController {
   /// Latest party data (balance updates in real time from Firestore).
   Party get currentParty => _ledger.selectedParty.value ?? party;
 
-  List<TransactionModel> get transactions => _ledger.transactions;
+  List<TransactionModel> get transactions => KhataCalculations.filterByCategory(
+        _ledger.transactions,
+        party.category,
+      );
 
   @override
   void onInit() {

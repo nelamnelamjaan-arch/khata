@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smart_khata_manager/features/ledger/models/khata_category.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_migration.dart';
 
 /// A party (customer / supplier) in the khata ledger.
 class Party {
@@ -45,23 +46,13 @@ class Party {
       name: map['name']?.toString() ?? 'Unknown',
       phone: map['phone']?.toString() ?? '',
       currentBalance: balance,
-      category: _readCategory(map, balance),
+      category: KhataMigration.resolvePartyCategory(map, balance: balance),
     );
   }
 
   factory Party.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
     return Party.fromMap({...data, 'id': doc.id});
-  }
-
-  static KhataCategory _readCategory(Map<String, dynamic> map, double balance) {
-    final raw = map['category']?.toString();
-    if (raw != null && raw.isNotEmpty) {
-      return KhataCategory.fromString(raw);
-    }
-    // Purane records: balance se guess karein.
-    if (balance > 0) return KhataCategory.denay;
-    return KhataCategory.lenay;
   }
 
   static double _readBalance(Map<String, dynamic> map) {

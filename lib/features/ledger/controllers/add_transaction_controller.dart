@@ -7,6 +7,7 @@ import 'package:smart_khata_manager/features/ledger/controllers/ledger_controlle
 import 'package:smart_khata_manager/features/ledger/models/khata_category.dart';
 import 'package:smart_khata_manager/features/ledger/models/party.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction_type.dart';
+import 'package:smart_khata_manager/features/ledger/widgets/category_picker_sheet.dart';
 import 'package:smart_khata_manager/features/receipt/controllers/receipt_controller.dart';
 import 'package:smart_khata_manager/features/receipt/models/parsed_receipt_data.dart';
 import 'package:smart_khata_manager/features/receipt/models/receipt_scan_result.dart';
@@ -174,6 +175,15 @@ class AddTransactionController extends GetxController {
 
     final partyId = await _resolvePartyId();
     if (partyId == null) return;
+
+    final partyName = partyNameController.text.trim();
+    final confirmed = await confirmEntryCategory(
+      Get.context!,
+      category: selectedCategory.value,
+      partyName: partyName,
+      amount: amount,
+    );
+    if (!confirmed) return;
 
     isSubmitting.value = true;
     try {

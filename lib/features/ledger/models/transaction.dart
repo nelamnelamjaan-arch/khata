@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smart_khata_manager/core/config/app_constants.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_category.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_migration.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction_type.dart';
 
 /// A credit/debit ledger entry linked to a [Party].
@@ -9,6 +11,7 @@ class TransactionModel {
     required this.partyId,
     required this.amount,
     required this.type,
+    required this.bookCategory,
     required this.date,
     required this.note,
   });
@@ -17,6 +20,10 @@ class TransactionModel {
   final String partyId;
   final double amount;
   final TransactionType type;
+
+  /// `lenay` | `denay` — entry kis khata section ki hai.
+  final KhataCategory bookCategory;
+
   final DateTime date;
   final String note;
 
@@ -31,17 +38,20 @@ class TransactionModel {
         'partyId': partyId,
         'amount': amount,
         'type': type.value,
+        'bookCategory': bookCategory.value,
         'date': Timestamp.fromDate(date),
         'note': note,
       };
 
   /// Parses app-written docs and manual/dummy Firestore entries.
   factory TransactionModel.fromMap(Map<String, dynamic> map) {
+    final type = TransactionType.fromString(_readTypeRaw(map));
     return TransactionModel(
       id: map['id'] as String? ?? '',
       partyId: _readPartyId(map),
       amount: _readAmount(map),
-      type: TransactionType.fromString(_readTypeRaw(map)),
+      type: type,
+      bookCategory: _readBookCategory(map, type),
       date: _parseDate(map['date']),
       note: map['note'] as String? ?? map['description'] as String? ?? '',
     );
@@ -98,10 +108,15 @@ class TransactionModel {
     final raw = map['type'] ??
         map['transactionType'] ??
         map['entryType'] ??
-        map['ledgerType'] ??
-        map['category'];
+        map['ledgerType'];
     return raw?.toString() ?? AppConstants.entryDebit;
   }
+
+  static KhataCategory _readBookCategory(
+    Map<String, dynamic> map,
+    TransactionType type,
+  ) =>
+      KhataMigration.resolveBookCategory(map, type);
 
   static DateTime _parseDate(dynamic value) {
     if (value == null) return DateTime.now();

@@ -26,6 +26,15 @@ class DashboardSummary {
   final int partyCount;
   final int rawTransactionDocs;
 
+  /// Baaki lenay (receivable) — alag total.
+  double get totalLenay => totalReceivable;
+
+  /// Baaki denay (payable) — alag total.
+  double get totalDenay => totalPayable;
+
+  /// Net position: positive = zyada lenay, negative = zyada denay.
+  double get netBalance => totalLenay - totalDenay;
+
   static const empty = DashboardSummary(
     totalReceivable: 0,
     totalPayable: 0,

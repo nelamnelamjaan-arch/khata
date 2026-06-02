@@ -4,6 +4,7 @@ abstract final class AppRoutes {
   static const login = auth;
   static const signup = '/signup';
   static const dashboard = '/dashboard';
+  static const ledger = '/ledger';
   static const ledgerLenay = '/ledger/lenay';
   static const ledgerDenay = '/ledger/denay';
   static const partyDetail = '/party-detail';
