@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:smart_khata_manager/app/routes/app_routes.dart';
 import 'package:smart_khata_manager/core/services/auth_service.dart';
+import 'package:smart_khata_manager/core/services/firebase_service.dart';
 
 /// Redirects unauthenticated users to the auth screen.
 class AuthMiddleware extends GetMiddleware {
@@ -10,7 +11,7 @@ class AuthMiddleware extends GetMiddleware {
 
   @override
   RouteSettings? redirect(String? route) {
-    if (!Get.isRegistered<AuthService>()) {
+    if (!_coreReady) {
       return const RouteSettings(name: AppRoutes.splash);
     }
     if (!Get.find<AuthService>().isSignedIn) {
@@ -27,7 +28,7 @@ class GuestMiddleware extends GetMiddleware {
 
   @override
   RouteSettings? redirect(String? route) {
-    if (!Get.isRegistered<AuthService>()) {
+    if (!_coreReady) {
       return const RouteSettings(name: AppRoutes.splash);
     }
     if (Get.find<AuthService>().isSignedIn) {
@@ -35,4 +36,12 @@ class GuestMiddleware extends GetMiddleware {
     }
     return null;
   }
+}
+
+bool get _coreReady {
+  if (!Get.isRegistered<FirebaseService>() ||
+      !Get.isRegistered<AuthService>()) {
+    return false;
+  }
+  return Get.find<FirebaseService>().isFirestoreReady.value;
 }

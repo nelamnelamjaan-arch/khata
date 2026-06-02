@@ -4,6 +4,8 @@ import 'package:smart_khata_manager/features/auth/controllers/auth_controller.da
 class AuthBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<AuthController>(() => AuthController());
+    if (!Get.isRegistered<AuthController>()) {
+      Get.put<AuthController>(AuthController());
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -43,25 +44,50 @@ class AuthService extends GetxService {
   final Rxn<User> currentUser = Rxn<User>();
   final RxnString authError = RxnString();
 
-  String? get userId => _auth.currentUser?.uid;
+  String? get userId {
+    if (!_isFirebaseReady) return null;
+    try {
+      return _auth.currentUser?.uid;
+    } catch (_) {
+      return null;
+    }
+  }
 
-  bool get isSignedIn => _auth.currentUser != null;
+  bool get isSignedIn {
+    if (!_isFirebaseReady) return false;
+    try {
+      return _auth.currentUser != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool get _isFirebaseReady => Firebase.apps.isNotEmpty;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   Future<AuthService> init() async {
-    final user = _auth.currentUser;
-    // Legacy builds used anonymous auth — sign out so users must use email/Google/phone.
-    if (user != null && user.isAnonymous) {
-      try {
-        await signOut();
-      } catch (_) {
-        currentUser.value = null;
-      }
-    } else {
-      currentUser.value = user;
+    if (!_isFirebaseReady) {
+      currentUser.value = null;
+      return this;
     }
-    _auth.authStateChanges().listen((u) => currentUser.value = u);
+
+    try {
+      final user = _auth.currentUser;
+      // Legacy builds used anonymous auth — sign out so users must use email/Google/phone.
+      if (user != null && user.isAnonymous) {
+        try {
+          await signOut();
+        } catch (_) {
+          currentUser.value = null;
+        }
+      } else {
+        currentUser.value = user;
+      }
+      _auth.authStateChanges().listen((u) => currentUser.value = u);
+    } catch (_) {
+      currentUser.value = null;
+    }
     return this;
   }
 

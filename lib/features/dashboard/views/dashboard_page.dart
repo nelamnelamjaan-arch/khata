@@ -19,8 +19,13 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  late final Stream<DashboardSummary> _summaryStream =
-      Get.find<LedgerService>().watchDashboardSummary();
+  late final Stream<DashboardSummary> _summaryStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _summaryStream = Get.find<LedgerService>().watchDashboardSummary();
+  }
 
   @override
   Widget build(BuildContext context) {
