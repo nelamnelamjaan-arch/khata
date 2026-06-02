@@ -16,7 +16,7 @@ fi
 
 flutter pub get
 
-DART_DEFINES=( "--dart-define=BUILD_ID=${VERCEL_GIT_COMMIT_SHA:-vercel}" )
+DART_DEFINES=()
 
 _optional_define() {
   local name="$1"
