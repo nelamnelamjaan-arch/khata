@@ -7,6 +7,7 @@ import 'package:smart_khata_manager/core/services/auth_service.dart';
 import 'package:smart_khata_manager/core/services/firebase_service.dart';
 import 'package:smart_khata_manager/core/services/notification_service.dart';
 import 'package:smart_khata_manager/features/dashboard/models/dashboard_summary.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_category.dart';
 import 'package:smart_khata_manager/features/ledger/models/party.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction_type.dart';
@@ -90,6 +91,7 @@ class LedgerService extends GetxService {
   Future<Party> createParty({
     required String name,
     required String phone,
+    required KhataCategory category,
     String? id,
   }) async {
     _ensureReady();
@@ -99,6 +101,7 @@ class LedgerService extends GetxService {
       name: name,
       phone: phone,
       currentBalance: 0,
+      category: category,
     );
 
     await _partiesRef
@@ -120,7 +123,7 @@ class LedgerService extends GetxService {
     return Party.fromFirestore(doc);
   }
 
-  Stream<List<Party>> watchParties() {
+  Stream<List<Party>> watchParties({KhataCategory? category}) {
     return _whenReady((db, userId) {
       return db
           .collection(AppConstants.usersCollection)
@@ -128,11 +131,13 @@ class LedgerService extends GetxService {
           .collection(AppConstants.partiesCollection)
           .orderBy('name')
           .snapshots()
-          .map(
-            (snapshot) => snapshot.docs
+          .map((snapshot) {
+            final all = snapshot.docs
                 .map(Party.fromFirestore)
-                .toList(growable: false),
-          );
+                .toList(growable: false);
+            if (category == null) return all;
+            return all.where((p) => p.category == category).toList();
+          });
     });
   }
 
@@ -191,6 +196,11 @@ class LedgerService extends GetxService {
       }
 
       final party = Party.fromFirestore(partySnap);
+      if (!party.category.allowsTransactionType(type)) {
+        throw ArgumentError(
+          'Ye entry "${party.category.title}" khata ke liye nahi hai.',
+        );
+      }
       final newBalance = party.currentBalance + transaction.balanceDelta;
 
       firestoreTx.set(_transactionsRef.doc(txId), transaction.toMap());
@@ -406,42 +416,48 @@ class LedgerService extends GetxService {
     var payableParties = 0;
 
     for (final party in parties) {
-      if (party.isReceivable) {
-        partyReceivable += party.receivableAmount;
+      if (party.category == KhataCategory.lenay) {
         receivableParties++;
-      } else if (party.isPayable) {
-        partyPayable += party.payableAmount;
+        if (party.isReceivable) {
+          partyReceivable += party.receivableAmount;
+        }
+      } else {
         payableParties++;
+        if (party.isPayable) {
+          partyPayable += party.payableAmount;
+        }
       }
     }
 
-    // 2) Direct sum from transactions collection (manual/dummy data).
-    var txReceivable = 0.0;
-    var txPayable = 0.0;
+    // 2) Totals from transactions by category.
+    var kulOdhaarDiya = 0.0;
+    var totalWasooli = 0.0;
+    var kulOdhaarLiya = 0.0;
+    var totalAdaKiya = 0.0;
 
     for (final tx in transactions) {
       if (tx.amount <= 0) continue;
-      if (tx.type.isDebit) {
-        txReceivable += tx.amount;
-      } else {
-        txPayable += tx.amount;
+      switch (tx.type) {
+        case TransactionType.udharDiya:
+          kulOdhaarDiya += tx.amount;
+        case TransactionType.wasooli:
+          totalWasooli += tx.amount;
+        case TransactionType.qarzLiya:
+          kulOdhaarLiya += tx.amount;
+        case TransactionType.adaKiya:
+          totalAdaKiya += tx.amount;
       }
     }
 
-    // Use the higher value from either source so nothing is missed.
-    final totalReceivable =
-        partyReceivable > txReceivable ? partyReceivable : txReceivable;
-    final totalPayable =
-        partyPayable > txPayable ? partyPayable : txPayable;
-
     return DashboardSummary(
-      totalReceivable: totalReceivable,
-      totalPayable: totalPayable,
-      receivablePartyCount: receivableParties > 0
-          ? receivableParties
-          : transactions.where((t) => t.isDebit).length,
-      payablePartyCount:
-          payableParties > 0 ? payableParties : transactions.where((t) => t.isCredit).length,
+      totalReceivable: partyReceivable,
+      totalPayable: partyPayable,
+      kulOdhaarDiya: kulOdhaarDiya,
+      totalWasooli: totalWasooli,
+      kulOdhaarLiya: kulOdhaarLiya,
+      totalAdaKiya: totalAdaKiya,
+      receivablePartyCount: receivableParties,
+      payablePartyCount: payableParties,
       transactionCount: transactions.length,
       partyCount: parties.length,
       rawTransactionDocs: rawTransactionDocs,

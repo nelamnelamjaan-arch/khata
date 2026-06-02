@@ -24,7 +24,7 @@ class TransactionModel {
   bool get isDebit => type.isDebit;
 
   /// Signed delta applied to [Party.currentBalance].
-  double get balanceDelta => isDebit ? -amount : amount;
+  double get balanceDelta => type.balanceDeltaFor(amount);
 
   Map<String, dynamic> toMap() => {
         'id': id,

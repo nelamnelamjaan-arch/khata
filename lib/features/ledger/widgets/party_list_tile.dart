@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_khata_manager/core/theme/app_colors.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_category.dart';
 import 'package:smart_khata_manager/features/ledger/models/party.dart';
 
 /// Har naam ki row — baaki lenay/denay amount.
@@ -65,12 +66,12 @@ class PartyListTile extends StatelessWidget {
   }
 
   ({String label, Color color}) _balanceLabel(Party party) {
-    if (party.isReceivable) {
-      return (label: 'Baaki lenay hain', color: AppColors.receivable);
+    if (party.isSettled) {
+      return (label: 'Clear', color: AppColors.textSecondary);
     }
-    if (party.isPayable) {
-      return (label: 'Baaki denay hain', color: AppColors.payable);
+    if (party.category == KhataCategory.lenay) {
+      return (label: party.category.baakiLabel, color: party.category.color);
     }
-    return (label: 'Clear', color: AppColors.textSecondary);
+    return (label: party.category.baakiLabel, color: party.category.color);
   }
 }

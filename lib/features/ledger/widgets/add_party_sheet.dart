@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_khata_manager/features/ledger/controllers/ledger_controller.dart';
-import 'package:smart_khata_manager/features/ledger/models/khata_labels.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_category.dart';
 
-/// Naya naam add karein — har shakhs ka alag khata Firestore mein save hoga.
+/// Naya naam add karein — category ke mutabiq alag khata book.
 class AddPartySheet extends StatefulWidget {
-  const AddPartySheet({super.key, required this.controller});
+  const AddPartySheet({
+    super.key,
+    required this.controller,
+    required this.category,
+  });
 
   final LedgerController controller;
+  final KhataCategory category;
 
   @override
   State<AddPartySheet> createState() => _AddPartySheetState();
@@ -34,9 +39,10 @@ class _AddPartySheetState extends State<AddPartySheet> {
       await widget.controller.createParty(
         name: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
+        category: widget.category,
       );
       if (mounted) Navigator.of(context).pop();
-      Get.snackbar('Success', 'Party added successfully.');
+      Get.snackbar('Saved', '${widget.category.title} mein naam add ho gaya');
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -71,12 +77,12 @@ class _AddPartySheetState extends State<AddPartySheet> {
               ),
             ),
             Text(
-              'Naya Naam (Khata)',
+              widget.category.addNameLabel,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 4),
             Text(
-              KhataLabels.addPartyHint,
+              widget.category.subtitle,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
@@ -89,14 +95,14 @@ class _AddPartySheetState extends State<AddPartySheet> {
                 prefixIcon: Icon(Icons.person),
               ),
               validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Name is required' : null,
+                  v == null || v.trim().isEmpty ? 'Naam likhein' : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
-                labelText: 'Phone',
+                labelText: 'Phone (optional)',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.phone),
               ),

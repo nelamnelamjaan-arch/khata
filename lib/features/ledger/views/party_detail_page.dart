@@ -18,6 +18,7 @@ class PartyDetailPage extends GetView<PartyDetailController> {
       final party = controller.currentParty;
       final transactions = controller.ledger.transactions;
       final summary = PartyAccountSummary.fromTransactions(
+        party.category,
         transactions,
         currentBalance: party.currentBalance,
       );
@@ -157,57 +158,28 @@ class _KhataSummaryCard extends StatelessWidget {
               style: const TextStyle(color: AppColors.textSecondary),
             ),
           const SizedBox(height: 12),
-          if (summary.isReceivable || summary.kulLenayThay > 0) ...[
-            _SectionTitle(
-              title: 'Lenay hain (Wo aap ko den)',
-              color: AppColors.receivable,
-            ),
-            const SizedBox(height: 8),
-            _StatRow(
-              label: 'Kul udhar diya',
-              value: summary.kulLenayThay,
-              color: AppColors.receivable,
-            ),
-            _StatRow(
-              label: 'Wapas mile / Wasooli',
-              value: summary.wapasMile,
-              color: AppColors.textSecondary,
-            ),
-            _StatRow(
-              label: 'Baaki lenay hain',
-              value: summary.baakiLenay,
-              color: AppColors.receivable,
-              bold: true,
-            ),
-          ],
-          if (summary.isPayable || summary.kulDenayThay > 0) ...[
-            if (summary.isReceivable || summary.kulLenayThay > 0)
-              const Divider(height: 24),
-            _SectionTitle(
-              title: 'Denay hain (Aap unhe den)',
-              color: AppColors.payable,
-            ),
-            const SizedBox(height: 8),
-            _StatRow(
-              label: 'Kul dena tha / Qarz',
-              value: summary.kulDenayThay,
-              color: AppColors.payable,
-            ),
-            _StatRow(
-              label: 'Day diye',
-              value: summary.dayDiye,
-              color: AppColors.textSecondary,
-            ),
-            _StatRow(
-              label: 'Baaki denay hain',
-              value: summary.baakiDenay,
-              color: AppColors.payable,
-              bold: true,
-            ),
-          ],
-          if (summary.isSettled &&
-              summary.kulLenayThay == 0 &&
-              summary.kulDenayThay == 0)
+          _SectionTitle(
+            title: party.category.title,
+            color: party.category.color,
+          ),
+          const SizedBox(height: 8),
+          _StatRow(
+            label: party.category.kulLabel,
+            value: summary.kulOdhaar,
+            color: party.category.color,
+          ),
+          _StatRow(
+            label: party.category.wapasLabel,
+            value: summary.totalWapas,
+            color: AppColors.textSecondary,
+          ),
+          _StatRow(
+            label: party.category.baakiLabel,
+            value: summary.baaki,
+            color: party.category.color,
+            bold: true,
+          ),
+          if (!summary.hasActivity && summary.isSettled)
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(16),
@@ -217,8 +189,7 @@ class _KhataSummaryCard extends StatelessWidget {
                 ),
               ),
             ),
-          if (summary.isSettled &&
-              (summary.kulLenayThay > 0 || summary.kulDenayThay > 0))
+          if (summary.isSettled && summary.hasActivity)
             const Padding(
               padding: EdgeInsets.only(top: 12),
               child: Center(

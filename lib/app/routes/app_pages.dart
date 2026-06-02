@@ -6,8 +6,9 @@ import 'package:smart_khata_manager/features/ledger/bindings/add_transaction_bin
 import 'package:smart_khata_manager/features/ledger/bindings/ledger_binding.dart';
 import 'package:smart_khata_manager/features/ledger/views/add_transaction_page.dart';
 import 'package:smart_khata_manager/features/ledger/bindings/party_detail_binding.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_category.dart';
+import 'package:smart_khata_manager/features/ledger/views/category_khata_page.dart';
 import 'package:smart_khata_manager/features/ledger/views/party_detail_page.dart';
-import 'package:smart_khata_manager/features/ledger/views/parties_list_page.dart';
 import 'package:smart_khata_manager/features/splash/views/splash_page.dart';
 
 abstract final class AppPages {
@@ -34,8 +35,14 @@ abstract final class AppPages {
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
-      name: AppRoutes.ledger,
-      page: () => const PartiesListPage(),
+      name: AppRoutes.ledgerLenay,
+      page: () => const CategoryKhataPage(category: KhataCategory.lenay),
+      binding: LedgerBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.ledgerDenay,
+      page: () => const CategoryKhataPage(category: KhataCategory.denay),
       binding: LedgerBinding(),
       middlewares: [AuthMiddleware()],
     ),

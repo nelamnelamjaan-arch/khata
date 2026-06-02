@@ -16,8 +16,9 @@ class TransactionListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDebit = transaction.isDebit;
-    final color = isDebit ? AppColors.receivable : AppColors.payable;
+    final color = transaction.type.isLenaySide
+        ? AppColors.receivable
+        : AppColors.payable;
     final typeLabel = KhataLabels.entryTypeLabel(transaction.type);
 
     return ListTile(
@@ -25,7 +26,9 @@ class TransactionListTile extends StatelessWidget {
       leading: CircleAvatar(
         backgroundColor: color.withValues(alpha: 0.15),
         child: Icon(
-          isDebit ? Icons.add : Icons.check,
+          transaction.type.isUdharDiya || transaction.type.isQarzLiya
+              ? Icons.add
+              : Icons.check,
           color: color,
           size: 20,
         ),

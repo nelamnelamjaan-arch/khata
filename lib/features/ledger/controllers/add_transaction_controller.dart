@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:smart_khata_manager/core/utils/platform_image.dart';
 import 'package:smart_khata_manager/features/ledger/controllers/ledger_controller.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_category.dart';
 import 'package:smart_khata_manager/features/ledger/models/party.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction_type.dart';
 import 'package:smart_khata_manager/features/receipt/controllers/receipt_controller.dart';
@@ -28,7 +29,8 @@ class AddTransactionController extends GetxController {
 
   final selectedDate = DateTime.now().obs;
   final selectedPartyId = RxnString();
-  final transactionType = TransactionType.debit.obs;
+  final selectedCategory = KhataCategory.lenay.obs;
+  final transactionType = TransactionType.udharDiya.obs;
   final isSubmitting = false.obs;
   final isScanning = false.obs;
   final lockPartySelection = false.obs;
@@ -49,7 +51,22 @@ class AddTransactionController extends GetxController {
     lockPartySelection.value = true;
     selectedPartyId.value = party.id;
     partyNameController.text = party.name;
+    selectedCategory.value = party.category;
+    transactionType.value = party.category.defaultEntryType;
   }
+
+  void setCategory(KhataCategory category) {
+    selectedCategory.value = category;
+    transactionType.value = category.defaultEntryType;
+    if (!lockPartySelection.value) {
+      selectedPartyId.value = null;
+      partyNameController.clear();
+    }
+  }
+
+  List<Party> get partiesInCategory => _ledger.parties
+      .where((p) => p.category == selectedCategory.value)
+      .toList();
 
   @override
   void onClose() {
@@ -177,7 +194,7 @@ class AddTransactionController extends GetxController {
   }
 
   void _matchExistingParty(String name) {
-    final match = _ledger.parties.firstWhereOrNull(
+    final match = partiesInCategory.firstWhereOrNull(
       (p) => p.name.toLowerCase() == name.toLowerCase(),
     );
     if (match != null) selectedPartyId.value = match.id;
@@ -188,16 +205,20 @@ class AddTransactionController extends GetxController {
 
     final name = partyNameController.text.trim();
     if (name.isEmpty) {
-      Get.snackbar('Validation', 'Enter or select a party name.');
+      Get.snackbar('Validation', 'Naam likhein ya select karein.');
       return null;
     }
 
-    final existing = _ledger.parties.firstWhereOrNull(
+    final existing = partiesInCategory.firstWhereOrNull(
       (p) => p.name.toLowerCase() == name.toLowerCase(),
     );
     if (existing != null) return existing.id;
 
-    final created = await _ledger.createParty(name: name, phone: '');
+    final created = await _ledger.createParty(
+      name: name,
+      phone: '',
+      category: selectedCategory.value,
+    );
     return created.id;
   }
 }

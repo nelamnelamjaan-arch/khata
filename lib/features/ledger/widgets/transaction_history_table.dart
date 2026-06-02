@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_khata_manager/core/theme/app_colors.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_labels.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction.dart';
 
 /// Har lenay/denay entry ka table — tareekh, waqt, qism, rupay.
@@ -67,7 +68,7 @@ class TransactionHistoryTable extends StatelessWidget {
         _HeaderCell('#'),
         _HeaderCell('Tareekh'),
         _HeaderCell('Waqt'),
-        _HeaderCell('Lenay / Denay'),
+        _HeaderCell('Qism'),
         _HeaderCell('Rupay'),
         _HeaderCell('Note'),
       ],
@@ -75,9 +76,10 @@ class TransactionHistoryTable extends StatelessWidget {
   }
 
   TableRow _dataRow({required int index, required TransactionModel tx}) {
-    final isDebit = tx.isDebit;
-    final color = isDebit ? AppColors.receivable : AppColors.payable;
-    final typeLabel = isDebit ? 'Lenay (Udhar)' : 'Day diye (Wasooli)';
+    final color = tx.type.isLenaySide
+        ? AppColors.receivable
+        : AppColors.payable;
+    final typeLabel = KhataLabels.entryTypeShort(tx.type);
 
     return TableRow(
       children: [

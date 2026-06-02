@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:get/get.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_category.dart';
 import 'package:smart_khata_manager/features/ledger/models/party.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction_type.dart';
@@ -41,10 +42,15 @@ class LedgerController extends GetxController {
   Future<Party> createParty({
     required String name,
     required String phone,
+    required KhataCategory category,
   }) async {
     Party? created;
     await _runGuarded(() async {
-      created = await _ledger.createParty(name: name, phone: phone);
+      created = await _ledger.createParty(
+        name: name,
+        phone: phone,
+        category: category,
+      );
     });
     if (created == null) {
       throw StateError(errorMessage.value ?? 'Failed to create party');

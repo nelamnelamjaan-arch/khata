@@ -4,10 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:smart_khata_manager/app/routes/app_routes.dart';
 import 'package:smart_khata_manager/core/theme/app_colors.dart';
 import 'package:smart_khata_manager/features/ledger/controllers/add_transaction_controller.dart';
-import 'package:smart_khata_manager/features/ledger/controllers/ledger_controller.dart';
+import 'package:smart_khata_manager/features/ledger/models/khata_category.dart';
 import 'package:smart_khata_manager/features/ledger/models/party.dart';
-import 'package:smart_khata_manager/features/ledger/models/khata_labels.dart';
-import 'package:smart_khata_manager/features/ledger/models/transaction_type.dart';
+import 'package:smart_khata_manager/features/ledger/widgets/transaction_type_selector.dart';
 import 'package:smart_khata_manager/features/ledger/widgets/transaction_history_table.dart';
 
 /// Add Transaction form with hybrid OCR + Gemini AI auto-fill.
@@ -16,8 +15,6 @@ class AddTransactionPage extends GetView<AddTransactionController> {
 
   @override
   Widget build(BuildContext context) {
-    final ledger = Get.find<LedgerController>();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Transaction'),
@@ -64,26 +61,64 @@ class AddTransactionPage extends GetView<AddTransactionController> {
               const SizedBox(height: 24),
               Obx(() {
                 if (controller.lockPartySelection.value) {
-                  return InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Party',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                    child: Text(
-                      controller.partyNameController.text,
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: controller.selectedCategory.value.title,
+                          border: const OutlineInputBorder(),
+                          prefixIcon: Icon(controller.selectedCategory.value.icon),
+                        ),
+                        child: Text(
+                          controller.partyNameController.text,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ],
                   );
                 }
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Text(
+                      'Kaun sa khata book?',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ChoiceChip(
+                            label: Text(KhataCategory.lenay.title),
+                            selected: controller.selectedCategory.value ==
+                                KhataCategory.lenay,
+                            onSelected: controller.lockPartySelection.value
+                                ? null
+                                : (_) => controller
+                                    .setCategory(KhataCategory.lenay),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ChoiceChip(
+                            label: Text(KhataCategory.denay.title),
+                            selected: controller.selectedCategory.value ==
+                                KhataCategory.denay,
+                            onSelected: controller.lockPartySelection.value
+                                ? null
+                                : (_) => controller
+                                    .setCategory(KhataCategory.denay),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     TextField(
                       controller: controller.partyNameController,
                       decoration: const InputDecoration(
-                        labelText: 'Party Name',
+                        labelText: 'Naam',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.person),
                       ),
@@ -92,10 +127,10 @@ class AddTransactionPage extends GetView<AddTransactionController> {
                     DropdownButtonFormField<String>(
                       value: controller.selectedPartyId.value,
                       decoration: const InputDecoration(
-                        labelText: 'Or select existing party',
+                        labelText: 'Ya pehle se naam select karein',
                         border: OutlineInputBorder(),
                       ),
-                      items: ledger.parties
+                      items: controller.partiesInCategory
                           .map(
                             (p) => DropdownMenuItem(
                               value: p.id,
@@ -106,8 +141,8 @@ class AddTransactionPage extends GetView<AddTransactionController> {
                       onChanged: (id) {
                         controller.selectedPartyId.value = id;
                         if (id != null) {
-                          final party =
-                              ledger.parties.firstWhereOrNull((p) => p.id == id);
+                          final party = controller.partiesInCategory
+                              .firstWhereOrNull((p) => p.id == id);
                           if (party != null) {
                             controller.partyNameController.text = party.name;
                           }
@@ -147,37 +182,13 @@ class AddTransactionPage extends GetView<AddTransactionController> {
                     },
                   )),
               const SizedBox(height: 12),
-              Obx(() => SegmentedButton<TransactionType>(
-                    segments: [
-                      ButtonSegment(
-                        value: TransactionType.debit,
-                        label: Text(
-                          KhataLabels.entryTypeShort(TransactionType.debit),
-                        ),
-                        icon: const Icon(Icons.add_circle_outline,
-                            color: AppColors.receivable),
-                      ),
-                      ButtonSegment(
-                        value: TransactionType.credit,
-                        label: Text(
-                          KhataLabels.entryTypeShort(TransactionType.credit),
-                        ),
-                        icon: const Icon(Icons.remove_circle_outline,
-                            color: AppColors.payable),
-                      ),
-                    ],
-                    selected: {controller.transactionType.value},
-                    onSelectionChanged: (set) =>
-                        controller.transactionType.value = set.first,
-                  )),
-              const SizedBox(height: 4),
-              Obx(() => Text(
-                    KhataLabels.entryDescription(controller.transactionType.value),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  )),
+              Obx(
+                () => TransactionTypeSelector(
+                  category: controller.selectedCategory.value,
+                  selected: controller.transactionType.value,
+                  onChanged: (t) => controller.transactionType.value = t,
+                ),
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: controller.noteController,
