@@ -3,10 +3,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// Loads and exposes environment variables (Gemini API key, etc.).
 abstract final class EnvConfig {
   static Future<void> load() async {
-    try {
-      await dotenv.load(fileName: '.env', isOptional: true);
-    } catch (_) {
-      // .env is optional (e.g. missing on web build or first run).
+    for (final file in ['.env', '.env.example']) {
+      try {
+        await dotenv.load(fileName: file, isOptional: true);
+        if (hasGeminiKey) return;
+      } catch (_) {
+        // Try next file (local .env is gitignored; CI uses .env.example).
+      }
     }
   }
 

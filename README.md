@@ -69,6 +69,20 @@ Edit `.env` and add your free-tier key from [Google AI Studio](https://aistudio.
 flutter run
 ```
 
+## Live Web App (GitHub Pages)
+
+Source code on GitHub is **not** the runnable website. Each push to `main` builds Flutter web and deploys it automatically.
+
+**Live URL:** [https://nelamnelamjaan-arch.github.io/khata/](https://nelamnelamjaan-arch.github.io/khata/)
+
+**One-time setup (repo owner):**
+
+1. GitHub repo → **Settings** → **Pages**
+2. **Build and deployment** → Source: **GitHub Actions**
+3. Wait for the [Deploy workflow](https://github.com/nelamnelamjaan-arch/khata/actions) to finish after push
+
+If you see **404** on assets like `flutter_bootstrap.js`, you are opening the repo root instead of the deployed Pages URL above.
+
 ## Offline-First Behavior
 
 Firestore persistence is enabled in `FirebaseService`:
