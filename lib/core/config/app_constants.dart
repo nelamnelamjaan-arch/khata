@@ -2,12 +2,6 @@
 abstract final class AppConstants {
   static const String appName = 'Smart Khata Manager';
 
-  /// Injected on Vercel via `--dart-define=BUILD_ID=` (git SHA); shows on dashboard.
-  static const String buildLabel = String.fromEnvironment(
-    'BUILD_ID',
-    defaultValue: 'local',
-  );
-
   // ── Firestore Collections ───────────────────────────────────────────────
   /// Top-level user root — each user's data lives under `users/{uid}/…`.
   static const String usersCollection = 'users';
