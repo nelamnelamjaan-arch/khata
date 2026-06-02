@@ -68,7 +68,7 @@ class AddTransactionPage extends GetView<AddTransactionController> {
                         decoration: InputDecoration(
                           labelText: controller.selectedCategory.value.title,
                           border: const OutlineInputBorder(),
-                          prefixIcon: Icon(controller.selectedCategory.value.icon),
+                          prefixIcon: const Icon(Icons.person),
                         ),
                         child: Text(
                           controller.partyNameController.text,

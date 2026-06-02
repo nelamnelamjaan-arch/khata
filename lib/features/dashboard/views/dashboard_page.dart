@@ -214,27 +214,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 FilledButton.icon(
                   onPressed: () => Get.toNamed(AppRoutes.ledger),
                   icon: const Icon(Icons.menu_book),
-                  label: const Text('Khata Book (Lenay | Denay Tabs)'),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _openKhataBook(KhataCategory.lenay),
-                        icon: const Icon(Icons.arrow_downward),
-                        label: const Text('Unhon Ne Liya'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _openKhataBook(KhataCategory.denay),
-                        icon: const Icon(Icons.arrow_upward),
-                        label: const Text('Maine Liya'),
-                      ),
-                    ),
-                  ],
+                  label: const Text('Khata Book Kholein'),
                 ),
               ],
             );
@@ -318,10 +298,6 @@ class _KhataBookTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: category.color.withValues(alpha: 0.15),
-        child: Icon(category.icon, color: category.color),
-      ),
       title: Text(category.title),
       subtitle: Text(category.subtitle),
       trailing: const Icon(Icons.chevron_right),

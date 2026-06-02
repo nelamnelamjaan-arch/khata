@@ -122,7 +122,6 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(category.icon, size: 72, color: category.color),
             const SizedBox(height: 16),
             Text(
               'Abhi koi naam nahi',
