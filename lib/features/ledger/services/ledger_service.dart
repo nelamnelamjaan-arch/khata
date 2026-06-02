@@ -465,9 +465,10 @@ class LedgerService extends GetxService {
     final firebase = Get.find<FirebaseService>();
     final auth = Get.find<AuthService>();
 
-    Stream<void> triggers() async* {
-      yield null;
-      yield* firebase.isFirestoreReady.stream.distinct().map((_) => null);
+    Stream<Object?> triggers() async* {
+      yield Object();
+      yield* firebase.isFirestoreReady.stream.distinct().map((_) => Object());
+      yield* auth.authStateChanges().map((_) => Object());
     }
 
     return triggers().asyncExpand((_) {

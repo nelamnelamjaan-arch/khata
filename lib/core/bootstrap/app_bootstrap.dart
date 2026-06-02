@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:smart_khata_manager/app/bindings/initial_binding.dart';
 import 'package:smart_khata_manager/core/config/env_config.dart';
 import 'package:smart_khata_manager/core/services/auth_service.dart';
 import 'package:smart_khata_manager/core/services/firebase_service.dart';

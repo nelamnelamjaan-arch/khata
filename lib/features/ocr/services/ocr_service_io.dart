@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:get/get.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:smart_khata_manager/core/services/ai_service.dart';
 import 'package:smart_khata_manager/core/services/network_service.dart';
+import 'package:smart_khata_manager/core/utils/platform_image.dart';
 import 'package:smart_khata_manager/features/receipt/models/parsed_receipt_data.dart';
 
 /// Hybrid OCR engine (mobile/desktop):
@@ -13,7 +12,7 @@ class OcrService extends GetxService {
   final TextRecognizer _recognizer = TextRecognizer();
 
   /// Extract raw text from an image using on-device ML Kit.
-  Future<String> extractTextFromImage(File imageFile) async {
+  Future<String> extractTextFromImage(PlatformImage imageFile) async {
     final inputImage = InputImage.fromFile(imageFile);
     final recognizedText = await _recognizer.processImage(inputImage);
     return recognizedText.text;
@@ -21,7 +20,7 @@ class OcrService extends GetxService {
 
   /// OCR + optional AI parse when online.
   Future<({String rawText, ParsedReceiptData? parsed})> scanReceipt(
-    File imageFile,
+    PlatformImage imageFile,
   ) async {
     final rawText = await extractTextFromImage(imageFile);
 

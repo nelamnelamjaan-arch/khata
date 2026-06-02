@@ -42,14 +42,8 @@
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>smart_khata_manager</title>
-  <link rel="manifest" href="manifest.json">
-
-  <!-- Google Sign-In (optional — popup fallback works without this) -->
-  <!-- Copy Web client ID from Firebase Console → Authentication → Google → Web SDK -->
-  <!-- <meta name="google-signin-client_id" content="YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"> -->
-
   <!-- Firebase Phone Auth reCAPTCHA (web) -->
-  <div id="recaptcha-container" style="display:flex;justify-content:center;margin:8px auto;"></div>
+  <link rel="manifest" href="manifest.json">
 
   <style>
     body {
@@ -100,6 +94,7 @@
   </script>
 </head>
 <body>
+  <div id="recaptcha-container" style="display:none;"></div>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

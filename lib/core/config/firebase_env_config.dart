@@ -24,7 +24,16 @@ abstract final class FirebaseEnvConfig {
   static FirebaseOptions get currentPlatform {
     final defaults = DefaultFirebaseOptions.currentPlatform;
     if (!kIsWeb) return defaults;
+    if (!_hasCompileTimeOverrides()) return defaults;
     return _withOverrides(defaults);
+  }
+
+  static bool _hasCompileTimeOverrides() {
+    return _defineApiKey.isNotEmpty ||
+        _defineAppId.isNotEmpty ||
+        _defineProjectId.isNotEmpty ||
+        _defineMessagingSenderId.isNotEmpty ||
+        _defineAuthDomain.isNotEmpty;
   }
 
   static FirebaseOptions _withOverrides(FirebaseOptions defaults) {

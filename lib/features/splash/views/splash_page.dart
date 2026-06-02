@@ -83,6 +83,14 @@ class _SplashPageState extends State<SplashPage> {
     }
   }
 
+  bool _looksLikeFirebaseDomainIssue(String message) {
+    final lower = message.toLowerCase();
+    return lower.contains('network') ||
+        lower.contains('unauthorized') ||
+        lower.contains('authorized domain') ||
+        lower.contains('auth/');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,11 +139,12 @@ class _SplashPageState extends State<SplashPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Add khata-caet.vercel.app under Firebase → Authentication → Authorized domains, then retry.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                ),
+                if (_looksLikeFirebaseDomainIssue(_error!))
+                  const Text(
+                    'Add khata-caet.vercel.app under Firebase → Authentication → Authorized domains, then retry.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
                 const SizedBox(height: 24),
                 FilledButton.icon(
                   onPressed: _bootstrap,

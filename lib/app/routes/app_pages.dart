@@ -20,30 +20,36 @@ abstract final class AppPages {
       name: AppRoutes.auth,
       page: () => const AuthScreen(),
       binding: AuthBinding(),
+      middlewares: [GuestMiddleware()],
     ),
     GetPage(
       name: AppRoutes.signup,
       page: () => const SignupPage(),
       binding: AuthBinding(),
+      middlewares: [GuestMiddleware()],
     ),
     GetPage(
       name: AppRoutes.dashboard,
       page: () => const DashboardPage(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.ledger,
       page: () => const PartiesListPage(),
       binding: LedgerBinding(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.partyDetail,
       page: () => const PartyDetailPage(),
       binding: PartyDetailBinding(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.addTransaction,
       page: () => const AddTransactionPage(),
       binding: AddTransactionBinding(),
+      middlewares: [AuthMiddleware()],
     ),
   ];
 }

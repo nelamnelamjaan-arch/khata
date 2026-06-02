@@ -1,9 +1,9 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:smart_khata_manager/core/services/ai_service.dart';
 import 'package:smart_khata_manager/core/services/ai_service_exception.dart';
 import 'package:smart_khata_manager/core/services/network_service.dart';
+import 'package:smart_khata_manager/core/utils/platform_image.dart';
 import 'package:smart_khata_manager/features/ocr/services/ocr_service.dart';
 import 'package:smart_khata_manager/features/receipt/models/parsed_receipt_data.dart';
 import 'package:smart_khata_manager/features/receipt/models/receipt_scan_result.dart';
@@ -30,24 +30,36 @@ class ReceiptController extends GetxController {
 
   /// Opens [ReceiptCameraPage] and runs the full scan pipeline.
   Future<ReceiptScanResult?> scanReceiptFromCamera() async {
-    final imageFile = await Get.to<File>(() => const ReceiptCameraPage());
+    if (kIsWeb) {
+      errorMessage.value =
+          'Camera receipt scan is available on mobile. Enter details manually.';
+      return null;
+    }
+
+    final imageFile = await Get.to<PlatformImage>(() => const ReceiptCameraPage());
     if (imageFile == null) return null;
     return scanFromImage(imageFile);
   }
 
   /// Image → ML Kit OCR → Gemini parse (when online).
-  Future<ReceiptScanResult> scanFromImage(File imageFile) async {
+  Future<ReceiptScanResult> scanFromImage(PlatformImage imageFile) async {
     isProcessing.value = true;
     errorMessage.value = null;
     parsedReceipt.value = null;
 
     try {
+      if (kIsWeb) {
+        errorMessage.value =
+            'Receipt scan is available on mobile. Enter details manually.';
+        return const ReceiptScanResult(rawText: '', usedAiParsing: false);
+      }
+
       final rawText = await _ocr.extractTextFromImage(imageFile);
       rawOcrText.value = rawText;
 
       if (rawText.trim().isEmpty) {
         errorMessage.value = 'No text detected on the receipt.';
-        return ReceiptScanResult(rawText: '', usedAiParsing: false);
+        return const ReceiptScanResult(rawText: '', usedAiParsing: false);
       }
 
       final online = await _network.checkOnline();
@@ -76,7 +88,7 @@ class ReceiptController extends GetxController {
       }
     } catch (e) {
       errorMessage.value = 'Failed to scan receipt: $e';
-      return ReceiptScanResult(rawText: '', usedAiParsing: false);
+      return const ReceiptScanResult(rawText: '', usedAiParsing: false);
     } finally {
       isProcessing.value = false;
     }

@@ -1,8 +1,8 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:smart_khata_manager/core/utils/platform_image.dart';
 import 'package:smart_khata_manager/features/ledger/controllers/ledger_controller.dart';
 import 'package:smart_khata_manager/features/ledger/models/party.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction_type.dart';
@@ -74,6 +74,14 @@ class AddTransactionController extends GetxController {
 
   /// Fallback — pick an existing photo from gallery.
   Future<void> scanReceiptFromGallery() async {
+    if (kIsWeb) {
+      Get.snackbar(
+        'Web',
+        'Receipt scan works on mobile. Enter transaction details manually.',
+      );
+      return;
+    }
+
     final picked = await _imagePicker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 85,
@@ -82,7 +90,8 @@ class AddTransactionController extends GetxController {
 
     isScanning.value = true;
     try {
-      final result = await _receipt.scanFromImage(File(picked.path));
+      final result =
+          await _receipt.scanFromImage(platformImageFromXFilePath(picked.path));
       if (result.rawText.isNotEmpty) {
         _applyScanResult(result);
       }
