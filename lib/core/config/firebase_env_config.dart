@@ -7,6 +7,20 @@ import 'package:smart_khata_manager/firebase_options.dart';
 ///
 /// Web API keys are public in the client bundle; overrides are for Vercel/CI flexibility.
 abstract final class FirebaseEnvConfig {
+  // `--dart-define` values must use compile-time literal keys (not runtime variables).
+  static const _defineApiKey = String.fromEnvironment('FIREBASE_API_KEY');
+  static const _defineAppId = String.fromEnvironment('FIREBASE_APP_ID');
+  static const _defineMessagingSenderId =
+      String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID');
+  static const _defineProjectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
+  static const _defineAuthDomain = String.fromEnvironment('FIREBASE_AUTH_DOMAIN');
+  static const _defineDatabaseUrl =
+      String.fromEnvironment('FIREBASE_DATABASE_URL');
+  static const _defineStorageBucket =
+      String.fromEnvironment('FIREBASE_STORAGE_BUCKET');
+  static const _defineMeasurementId =
+      String.fromEnvironment('FIREBASE_MEASUREMENT_ID');
+
   static FirebaseOptions get currentPlatform {
     final defaults = DefaultFirebaseOptions.currentPlatform;
     if (!kIsWeb) return defaults;
@@ -29,8 +43,22 @@ abstract final class FirebaseEnvConfig {
     );
   }
 
+  static String _defineFor(String key) {
+    return switch (key) {
+      'FIREBASE_API_KEY' => _defineApiKey,
+      'FIREBASE_APP_ID' => _defineAppId,
+      'FIREBASE_MESSAGING_SENDER_ID' => _defineMessagingSenderId,
+      'FIREBASE_PROJECT_ID' => _defineProjectId,
+      'FIREBASE_AUTH_DOMAIN' => _defineAuthDomain,
+      'FIREBASE_DATABASE_URL' => _defineDatabaseUrl,
+      'FIREBASE_STORAGE_BUCKET' => _defineStorageBucket,
+      'FIREBASE_MEASUREMENT_ID' => _defineMeasurementId,
+      _ => '',
+    };
+  }
+
   static String _pick(String key, String fallback) {
-    final fromDefine = String.fromEnvironment(key);
+    final fromDefine = _defineFor(key);
     if (fromDefine.isNotEmpty) return fromDefine;
 
     final fromDotenv = dotenv.env[key]?.trim();
@@ -40,7 +68,7 @@ abstract final class FirebaseEnvConfig {
   }
 
   static String? _pickOptional(String key, String? fallback) {
-    final fromDefine = String.fromEnvironment(key);
+    final fromDefine = _defineFor(key);
     if (fromDefine.isNotEmpty) return fromDefine;
 
     final fromDotenv = dotenv.env[key]?.trim();
@@ -57,7 +85,7 @@ abstract final class FirebaseEnvConfig {
       'FIREBASE_PROJECT_ID',
     ];
     for (final key in keys) {
-      if (String.fromEnvironment(key).isNotEmpty) return true;
+      if (_defineFor(key).isNotEmpty) return true;
       final v = dotenv.env[key]?.trim();
       if (v != null && v.isNotEmpty) return true;
     }
