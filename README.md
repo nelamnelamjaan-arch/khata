@@ -83,6 +83,16 @@ Source code on GitHub is **not** the runnable website. Each push to `main` build
 
 If you see **404** on assets like `flutter_bootstrap.js`, you are opening the repo root instead of the deployed Pages URL above.
 
+## Deploy on Vercel
+
+Vercel serves the app at the **domain root** (`https://your-app.vercel.app/`), not `/khata/`.
+
+- `vercel.json` rewrites all routes to `index.html` (SPA refresh fix).
+- `scripts/vercel-build.sh` builds with `--base-href /` (required for Vercel).
+- GitHub Pages uses `--base-href /khata/` — do not mix the two builds.
+
+**Vercel dashboard:** connect the repo; `vercel.json` supplies build command and output directory. After deploy, use hash routes (`/#/dashboard`) or refresh any path — both should work.
+
 ## Offline-First Behavior
 
 Firestore persistence is enabled in `FirebaseService`:
