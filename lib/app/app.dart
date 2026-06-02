@@ -4,6 +4,7 @@ import 'package:smart_khata_manager/app/routes/app_pages.dart';
 import 'package:smart_khata_manager/app/routes/app_routes.dart';
 import 'package:smart_khata_manager/core/config/app_constants.dart';
 import 'package:smart_khata_manager/core/theme/app_theme.dart';
+import 'package:smart_khata_manager/features/splash/views/splash_page.dart';
 
 class SmartKhataApp extends StatelessWidget {
   const SmartKhataApp({super.key});
@@ -16,6 +17,10 @@ class SmartKhataApp extends StatelessWidget {
       theme: AppTheme.light,
       initialRoute: AppRoutes.splash,
       getPages: AppPages.routes,
+      unknownRoute: GetPage(
+        name: AppRoutes.splash,
+        page: () => const SplashPage(),
+      ),
     );
   }
 }

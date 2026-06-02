@@ -65,16 +65,20 @@ class _SplashPageState extends State<SplashPage> {
     }
 
     if (!mounted) return;
-    if (auth.isSignedIn) {
-      Get.offAllNamed(AppRoutes.dashboard);
-    } else {
-      Get.offAllNamed(AppRoutes.auth);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (auth.isSignedIn) {
+        Get.offAllNamed(AppRoutes.dashboard);
+      } else {
+        Get.offAllNamed(AppRoutes.auth);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
