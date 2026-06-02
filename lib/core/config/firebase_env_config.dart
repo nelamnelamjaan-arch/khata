@@ -20,14 +20,26 @@ abstract final class FirebaseEnvConfig {
       messagingSenderId:
           _pick('FIREBASE_MESSAGING_SENDER_ID', defaults.messagingSenderId),
       projectId: _pick('FIREBASE_PROJECT_ID', defaults.projectId),
-      authDomain: _pick('FIREBASE_AUTH_DOMAIN', defaults.authDomain),
-      databaseURL: _pick('FIREBASE_DATABASE_URL', defaults.databaseURL),
-      storageBucket: _pick('FIREBASE_STORAGE_BUCKET', defaults.storageBucket),
-      measurementId: _pick('FIREBASE_MEASUREMENT_ID', defaults.measurementId),
+      authDomain: _pickOptional('FIREBASE_AUTH_DOMAIN', defaults.authDomain),
+      databaseURL: _pickOptional('FIREBASE_DATABASE_URL', defaults.databaseURL),
+      storageBucket:
+          _pickOptional('FIREBASE_STORAGE_BUCKET', defaults.storageBucket),
+      measurementId:
+          _pickOptional('FIREBASE_MEASUREMENT_ID', defaults.measurementId),
     );
   }
 
   static String _pick(String key, String fallback) {
+    final fromDefine = String.fromEnvironment(key);
+    if (fromDefine.isNotEmpty) return fromDefine;
+
+    final fromDotenv = dotenv.env[key]?.trim();
+    if (fromDotenv != null && fromDotenv.isNotEmpty) return fromDotenv;
+
+    return fallback;
+  }
+
+  static String? _pickOptional(String key, String? fallback) {
     final fromDefine = String.fromEnvironment(key);
     if (fromDefine.isNotEmpty) return fromDefine;
 
