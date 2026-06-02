@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:smart_khata_manager/app/routes/app_routes.dart';
+import 'package:smart_khata_manager/features/auth/auth.dart';
 import 'package:smart_khata_manager/features/dashboard/views/dashboard_page.dart';
 import 'package:smart_khata_manager/features/ledger/bindings/add_transaction_binding.dart';
 import 'package:smart_khata_manager/features/ledger/bindings/ledger_binding.dart';
@@ -16,23 +17,39 @@ abstract final class AppPages {
       page: () => const SplashPage(),
     ),
     GetPage(
+      name: AppRoutes.auth,
+      page: () => const AuthScreen(),
+      binding: AuthBinding(),
+      middlewares: [GuestMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.signup,
+      page: () => const SignupPage(),
+      binding: AuthBinding(),
+      middlewares: [GuestMiddleware()],
+    ),
+    GetPage(
       name: AppRoutes.dashboard,
       page: () => const DashboardPage(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.ledger,
       page: () => const PartiesListPage(),
       binding: LedgerBinding(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.partyDetail,
       page: () => const PartyDetailPage(),
       binding: PartyDetailBinding(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.addTransaction,
       page: () => const AddTransactionPage(),
       binding: AddTransactionBinding(),
+      middlewares: [AuthMiddleware()],
     ),
   ];
 }

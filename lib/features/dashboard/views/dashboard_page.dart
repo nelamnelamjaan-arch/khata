@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:smart_khata_manager/app/routes/app_routes.dart';
 import 'package:smart_khata_manager/core/config/app_constants.dart';
+import 'package:smart_khata_manager/core/services/auth_service.dart';
 import 'package:smart_khata_manager/core/services/firebase_service.dart';
 import 'package:smart_khata_manager/core/services/network_service.dart';
 import 'package:smart_khata_manager/core/theme/app_colors.dart';
@@ -32,6 +33,26 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: const Icon(Icons.people),
             tooltip: 'Parties',
             onPressed: () => Get.toNamed(AppRoutes.ledger),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Account',
+            onSelected: (value) async {
+              if (value == 'signout') {
+                await Get.find<AuthService>().signOut();
+                Get.offAllNamed(AppRoutes.auth);
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'signout',
+                child: ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text('Sign out'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+              ),
+            ],
           ),
           if (Get.isRegistered<NetworkService>())
             Obx(() {

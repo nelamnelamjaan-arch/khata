@@ -18,7 +18,7 @@ Future<void> main() async {
   if (kDebugMode && !bootstrap.firebaseReady) {
     // ignore: avoid_print
     print(
-      'Firebase bootstrap incomplete: ${bootstrap.errorMessage ?? "unknown"}',
+      'Bootstrap incomplete: ${bootstrap.errorMessage ?? "unknown"}',
     );
   }
 

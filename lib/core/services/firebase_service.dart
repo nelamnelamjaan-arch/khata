@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:smart_khata_manager/core/config/app_constants.dart';
 import 'package:smart_khata_manager/core/config/firebase_env_config.dart';
+import 'package:smart_khata_manager/core/services/auth_service.dart';
 
 /// Result of [FirebaseService.verifyConnection] for mobile/desktop checks.
 class FirebaseConnectionTestResult {
@@ -52,10 +54,6 @@ class FirebaseService extends GetxService {
       _firestore = FirebaseFirestore.instanceFor(app: Firebase.app());
       await _configureFirestore(_firestore!);
       isFirestoreReady.value = true;
-
-      if (kDebugMode && !kIsWeb) {
-        await _debugWriteTest();
-      }
     } catch (e, stack) {
       initError.value = _formatInitError(e);
       isFirestoreReady.value = false;
@@ -121,19 +119,6 @@ class FirebaseService extends GetxService {
     return text;
   }
 
-  Future<void> _debugWriteTest() async {
-    try {
-      await _firestore!
-          .collection('_connection_test')
-          .doc('ping')
-          .set({'ok': true, 'at': FieldValue.serverTimestamp()});
-    } catch (e) {
-      initError.value =
-          'Firestore write test failed: $e\n'
-          'Run: firebase deploy --only firestore:rules';
-    }
-  }
-
   /// Retries init — splash / slow mobile networks.
   Future<bool> initWithRetry({int maxAttempts = 3}) async {
     if (isFirestoreReady.value && _firestore != null) return true;
@@ -164,30 +149,48 @@ class FirebaseService extends GetxService {
       }
     }
 
+    final auth = Get.find<AuthService>();
+    if (!auth.isSignedIn) {
+      return FirebaseConnectionTestResult(
+        ok: false,
+        message: 'Sign in required to test Firestore connection.',
+      );
+    }
+
+    final userId = auth.userId;
+    if (userId == null) {
+      return const FirebaseConnectionTestResult(
+        ok: false,
+        message: 'No signed-in user. Sign in with email and password first.',
+      );
+    }
+
     final db = _firestore!;
+    final testRef = db
+        .collection(AppConstants.usersCollection)
+        .doc(userId)
+        .collection('_meta')
+        .doc('connection');
+
     try {
-      final snap = await db
-          .collection('_connection_test')
-          .doc('ping')
-          .get()
-          .timeout(const Duration(seconds: 15));
+      final snap = await testRef.get().timeout(const Duration(seconds: 15));
 
       if (snap.exists) {
-        return const FirebaseConnectionTestResult(
+        return FirebaseConnectionTestResult(
           ok: true,
-          message: 'Read OK from Firestore (_connection_test/ping).',
+          message: 'Read OK from users/$userId/_meta/connection.',
         );
       }
 
-      await db.collection('_connection_test').doc('ping').set({
+      await testRef.set({
         'ok': true,
         'checkedAt': FieldValue.serverTimestamp(),
         'platform': kIsWeb ? 'web' : 'native',
       });
 
-      return const FirebaseConnectionTestResult(
+      return FirebaseConnectionTestResult(
         ok: true,
-        message: 'Write OK to Firestore (_connection_test/ping).',
+        message: 'Write OK to users/$userId/_meta/connection.',
       );
     } catch (e) {
       return FirebaseConnectionTestResult(

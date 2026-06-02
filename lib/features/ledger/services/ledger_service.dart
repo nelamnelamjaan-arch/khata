@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:smart_khata_manager/core/config/app_constants.dart';
+import 'package:smart_khata_manager/core/services/auth_service.dart';
 import 'package:smart_khata_manager/core/services/firebase_service.dart';
 import 'package:smart_khata_manager/core/services/notification_service.dart';
 import 'package:smart_khata_manager/features/dashboard/models/dashboard_summary.dart';
@@ -11,7 +12,9 @@ import 'package:smart_khata_manager/features/ledger/models/transaction.dart';
 import 'package:smart_khata_manager/features/ledger/models/transaction_type.dart';
 import 'package:uuid/uuid.dart';
 
-/// Firestore CRUD for parties and transactions.
+/// Firestore CRUD for parties and transactions, scoped to the signed-in user.
+///
+/// Data path: `users/{uid}/parties` and `users/{uid}/transactions`.
 ///
 /// [addTransaction] atomically writes the transaction document and updates
 /// the linked party's [Party.currentBalance] inside a Firestore transaction,
@@ -20,10 +23,13 @@ class LedgerService extends GetxService {
   final _uuid = const Uuid();
 
   Stream<DashboardSummary>? _dashboardSummaryStream;
+  String? _dashboardUserId;
 
   FirebaseFirestore? get _db => Get.find<FirebaseService>().firestore;
 
-  bool get _isReady => _db != null;
+  AuthService get _auth => Get.find<AuthService>();
+
+  bool get _isReady => _db != null && _auth.isSignedIn;
 
   FirebaseFirestore get _firestore {
     final db = _db;
@@ -39,17 +45,40 @@ class LedgerService extends GetxService {
     return db;
   }
 
-  CollectionReference<Map<String, dynamic>> get _partiesRef =>
-      _firestore.collection(AppConstants.partiesCollection);
+  String get _userId {
+    final uid = _auth.userId;
+    if (uid == null || uid.isEmpty) {
+      throw StateError(
+        'Not signed in. Sign in before reading or writing khata data.',
+      );
+    }
+    return uid;
+  }
 
-  CollectionReference<Map<String, dynamic>> get _transactionsRef =>
-      _firestore.collection(AppConstants.transactionsCollection);
+  CollectionReference<Map<String, dynamic>> get _partiesRef => _firestore
+      .collection(AppConstants.usersCollection)
+      .doc(_userId)
+      .collection(AppConstants.partiesCollection);
+
+  CollectionReference<Map<String, dynamic>> get _transactionsRef => _firestore
+      .collection(AppConstants.usersCollection)
+      .doc(_userId)
+      .collection(AppConstants.transactionsCollection);
 
   // ── Party CRUD ────────────────────────────────────────────────────────────
 
   void _ensureReady() {
     if (!_isReady) {
       final firebase = Get.find<FirebaseService>();
+      final auth = Get.find<AuthService>();
+      if (!auth.isSignedIn) {
+        final authDetail = auth.authError.value?.trim();
+        throw StateError(
+          authDetail != null && authDetail.isNotEmpty
+              ? 'Sign-in required. $authDetail'
+              : 'Sign-in required. Sign in with email and password.',
+        );
+      }
       final detail = firebase.initError.value?.trim();
       final hint = detail != null && detail.isNotEmpty
           ? detail
@@ -92,8 +121,10 @@ class LedgerService extends GetxService {
   }
 
   Stream<List<Party>> watchParties() {
-    return _whenFirestoreReady((db) {
+    return _whenReady((db, userId) {
       return db
+          .collection(AppConstants.usersCollection)
+          .doc(userId)
           .collection(AppConstants.partiesCollection)
           .orderBy('name')
           .snapshots()
@@ -181,14 +212,17 @@ class LedgerService extends GetxService {
   }
 
   Future<TransactionModel?> getTransaction(String id) async {
+    if (!_isReady) return null;
     final doc = await _transactionsRef.doc(id).get();
     if (!doc.exists) return null;
     return TransactionModel.fromFirestore(doc);
   }
 
   Stream<List<TransactionModel>> watchTransactionsByParty(String partyId) {
-    return _whenFirestoreReady((db) {
+    return _whenReady((db, userId) {
       return db
+          .collection(AppConstants.usersCollection)
+          .doc(userId)
           .collection(AppConstants.transactionsCollection)
           .where('partyId', isEqualTo: partyId)
           .orderBy('date', descending: true)
@@ -202,8 +236,10 @@ class LedgerService extends GetxService {
   }
 
   Stream<List<TransactionModel>> watchAllTransactions() {
-    return _whenFirestoreReady((db) {
+    return _whenReady((db, userId) {
       return db
+          .collection(AppConstants.usersCollection)
+          .doc(userId)
           .collection(AppConstants.transactionsCollection)
           .orderBy('date', descending: true)
           .snapshots()
@@ -277,15 +313,20 @@ class LedgerService extends GetxService {
 
   // ── Dashboard aggregates ──────────────────────────────────────────────────
 
-  /// Real-time dashboard totals — cached stream (one subscription).
+  /// Real-time dashboard totals — cached stream (one subscription per user).
   Stream<DashboardSummary> watchDashboardSummary() {
     final firebase = Get.find<FirebaseService>();
+    final userId = _auth.userId;
+
     if (_dashboardSummaryStream != null &&
+        _dashboardUserId == userId &&
         firebase.isFirestoreReady.value &&
-        firebase.firestore != null) {
+        firebase.firestore != null &&
+        userId != null) {
       return _dashboardSummaryStream!;
     }
 
+    _dashboardUserId = userId;
     _dashboardSummaryStream = _createDashboardSummaryStream();
     return _dashboardSummaryStream!;
   }
@@ -293,10 +334,23 @@ class LedgerService extends GetxService {
   Stream<DashboardSummary> _createDashboardSummaryStream() {
     final firebase = Get.find<FirebaseService>();
     final db = firebase.firestore;
+    final userId = _auth.userId;
 
-    if (db == null || !firebase.isFirestoreReady.value) {
+    if (db == null ||
+        !firebase.isFirestoreReady.value ||
+        userId == null ||
+        userId.isEmpty) {
       return Stream.value(DashboardSummary.empty);
     }
+
+    final partiesPath = db
+        .collection(AppConstants.usersCollection)
+        .doc(userId)
+        .collection(AppConstants.partiesCollection);
+    final transactionsPath = db
+        .collection(AppConstants.usersCollection)
+        .doc(userId)
+        .collection(AppConstants.transactionsCollection);
 
     return Stream.multi((multi) {
       var latestTx = <TransactionModel>[];
@@ -317,10 +371,7 @@ class LedgerService extends GetxService {
       // Emit immediately so UI shows zeros then updates.
       emit();
 
-      final txSub = db
-          .collection(AppConstants.transactionsCollection)
-          .snapshots()
-          .listen((snap) {
+      final txSub = transactionsPath.snapshots().listen((snap) {
         rawTxDocs = snap.docs.length;
         latestTx = snap.docs
             .map(TransactionModel.tryFromFirestore)
@@ -329,10 +380,7 @@ class LedgerService extends GetxService {
         emit();
       }, onError: multi.addError);
 
-      final partySub = db
-          .collection(AppConstants.partiesCollection)
-          .snapshots()
-          .listen((snap) {
+      final partySub = partiesPath.snapshots().listen((snap) {
         latestParties = snap.docs
             .map(Party.fromFirestore)
             .toList(growable: false);
@@ -410,23 +458,29 @@ class LedgerService extends GetxService {
     return watchDashboardSummary().map((s) => s.totalPayable);
   }
 
-  /// Re-subscribes when Firestore becomes ready (fixes empty-stream race).
-  Stream<T> _whenFirestoreReady<T>(
-    Stream<T> Function(FirebaseFirestore db) build,
+  /// Re-subscribes when Firestore + auth become ready (fixes empty-stream race).
+  Stream<T> _whenReady<T>(
+    Stream<T> Function(FirebaseFirestore db, String userId) build,
   ) {
     final firebase = Get.find<FirebaseService>();
+    final auth = Get.find<AuthService>();
 
-    Stream<bool> readyEvents() async* {
-      yield firebase.isFirestoreReady.value;
-      yield* firebase.isFirestoreReady.stream.distinct();
+    Stream<void> triggers() async* {
+      yield null;
+      yield* firebase.isFirestoreReady.stream.distinct().map((_) => null);
+      yield* auth.authStateChanges.map((_) => null);
     }
 
-    return readyEvents().asyncExpand((ready) {
+    return triggers().asyncExpand((_) {
       final db = firebase.firestore;
-      if (!ready || db == null) {
+      final userId = auth.userId;
+      if (!firebase.isFirestoreReady.value ||
+          db == null ||
+          userId == null ||
+          userId.isEmpty) {
         return Stream<T>.empty();
       }
-      return build(db);
+      return build(db, userId);
     });
   }
 

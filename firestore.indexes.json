@@ -2,7 +2,7 @@
   "indexes": [
     {
       "collectionGroup": "transactions",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "partyId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "DESCENDING" }

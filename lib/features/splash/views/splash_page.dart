@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:smart_khata_manager/app/routes/app_routes.dart';
 import 'package:smart_khata_manager/core/config/env_config.dart';
 import 'package:smart_khata_manager/core/services/ai_service.dart';
+import 'package:smart_khata_manager/core/services/auth_service.dart';
 import 'package:smart_khata_manager/core/services/firebase_service.dart';
 import 'package:smart_khata_manager/core/services/network_service.dart';
 import 'package:smart_khata_manager/core/theme/app_colors.dart';
@@ -54,6 +55,9 @@ class _SplashPageState extends State<SplashPage> {
       return;
     }
 
+    final auth = Get.find<AuthService>();
+    await auth.init();
+
     try {
       await Get.find<AiService>().init();
     } catch (e) {
@@ -61,7 +65,11 @@ class _SplashPageState extends State<SplashPage> {
     }
 
     if (!mounted) return;
-    Get.offAllNamed(AppRoutes.dashboard);
+    if (auth.isSignedIn) {
+      Get.offAllNamed(AppRoutes.dashboard);
+    } else {
+      Get.offAllNamed(AppRoutes.auth);
+    }
   }
 
   @override

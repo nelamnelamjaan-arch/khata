@@ -1,11 +1,15 @@
 rules_version = '2';
 
-// TEST MODE — open read/write for development (no auth required).
-// Tighten before production!
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Each signed-in user may only access their own subtree.
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Deny all other paths (including legacy global `parties` / `transactions`).
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

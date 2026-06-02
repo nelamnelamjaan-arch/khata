@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:smart_khata_manager/core/config/env_config.dart';
 import 'package:smart_khata_manager/core/services/ai_service.dart';
+import 'package:smart_khata_manager/core/services/auth_service.dart';
 import 'package:smart_khata_manager/core/services/firebase_service.dart';
 import 'package:smart_khata_manager/core/services/network_service.dart';
 import 'package:smart_khata_manager/core/services/notification_service.dart';
@@ -15,6 +16,9 @@ void registerCoreServices() {
   }
   if (!Get.isRegistered<FirebaseService>()) {
     Get.put<FirebaseService>(FirebaseService(), permanent: true);
+  }
+  if (!Get.isRegistered<AuthService>()) {
+    Get.put<AuthService>(AuthService(), permanent: true);
   }
   if (!Get.isRegistered<AiService>()) {
     Get.put<AiService>(AiService(), permanent: true);
@@ -46,6 +50,14 @@ Future<void> initCoreServices() async {
       await firebase.initWithRetry(maxAttempts: 3);
     } catch (e) {
       if (kDebugMode) print('FirebaseService init: $e');
+    }
+  }
+
+  if (firebase.isFirestoreReady.value) {
+    try {
+      await Get.find<AuthService>().init();
+    } catch (e) {
+      if (kDebugMode) print('AuthService init: $e');
     }
   }
 

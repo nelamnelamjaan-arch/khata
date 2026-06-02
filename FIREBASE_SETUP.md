@@ -10,10 +10,41 @@ cd "C:\Users\AL FATEH\Desktop\khaaty"
 
 firebase login
 flutterfire configure --project=khata-manager-ccf3a --platforms=web --yes --overwrite-firebase-options
-firebase deploy --only firestore:rules
+firebase deploy --only firestore:rules,firestore:indexes
 ```
 
 Or double-click: `scripts\setup_firebase.bat`
+
+---
+
+## Enable Authentication (required)
+
+Each user's khata data is stored under `users/{uid}/parties` and `users/{uid}/transactions`. Users must sign in before accessing their data.
+
+1. [Firebase Console](https://console.firebase.google.com/) → project **khata-manager-ccf3a**
+2. **Build** → **Authentication** → **Get started**
+3. Enable these **Sign-in method** providers:
+   - **Email/Password** → Enable
+   - **Google** → Enable (set support email)
+   - **Phone** → Enable
+
+4. **Authentication** → **Settings** → **Authorized domains** — add:
+   - `your-app.vercel.app`
+   - Any custom domain
+   - `localhost`
+
+### Google Sign-In (Flutter Web)
+
+- On web, the app uses Firebase **popup** sign-in by default (works when your domain is authorized).
+- Optional: copy the **Web client ID** from Firebase → Authentication → Google → Web SDK into:
+  - `.env` as `GOOGLE_WEB_CLIENT_ID=….apps.googleusercontent.com`
+  - or `web/index.html` meta tag `google-signin-client_id`
+
+### Phone Sign-In (Flutter Web)
+
+- Web phone auth uses **reCAPTCHA** (`#recaptcha-container` in `web/index.html`).
+- Enter phone numbers in international format: `+923001234567`
+- For production SMS, upgrade Firebase to the **Blaze** plan if prompted.
 
 ---
 
@@ -23,7 +54,8 @@ Or double-click: `scripts\setup_firebase.bat`
 |------|---------|--------|
 | 1 | `firebase login` | Browser opens → sign in with Google account that owns the Firebase project |
 | 2 | `flutterfire configure ...` | Updates `lib/firebase_options.dart` with **real** API keys |
-| 3 | `firebase deploy --only firestore:rules` | Fixes Firestore **permission-denied** errors |
+| 3 | Enable Email, Google, Phone Auth (Console) | Users can sign in via the Auth screen |
+| 4 | `firebase deploy --only firestore:rules,firestore:indexes` | Secures Firestore — users can only access their own `users/{uid}/…` data |
 
 ---
 

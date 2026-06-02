@@ -9,6 +9,7 @@ abstract final class AppConstants {
   );
 
   // ── Firestore Collections ───────────────────────────────────────────────
+  /// Top-level user root — each user's data lives under `users/{uid}/…`.
   static const String usersCollection = 'users';
   static const String partiesCollection = 'parties';
   static const String transactionsCollection = 'transactions';
