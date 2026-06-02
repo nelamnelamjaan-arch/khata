@@ -3,10 +3,8 @@ import 'package:get/get.dart';
 import 'package:smart_khata_manager/app/routes/app_routes.dart';
 import 'package:smart_khata_manager/core/config/app_constants.dart';
 import 'package:smart_khata_manager/core/services/auth_service.dart';
-import 'package:smart_khata_manager/core/services/firebase_service.dart';
 import 'package:smart_khata_manager/core/services/network_service.dart';
 import 'package:smart_khata_manager/core/theme/app_colors.dart';
-import 'package:smart_khata_manager/core/widgets/firebase_connection_panel.dart';
 import 'package:smart_khata_manager/features/dashboard/models/dashboard_summary.dart';
 import 'package:smart_khata_manager/features/ledger/services/ledger_service.dart';
 
@@ -81,108 +79,97 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (Get.isRegistered<FirebaseService>())
-              const FirebaseConnectionPanel(),
-            Expanded(
-              child: StreamBuilder<DashboardSummary>(
-                stream: _summaryStream,
-                initialData: DashboardSummary.empty,
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'Firestore error:\n${snapshot.error}',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: AppColors.payable),
-                        ),
-                      ),
-                    );
-                  }
+        child: StreamBuilder<DashboardSummary>(
+          stream: _summaryStream,
+          initialData: DashboardSummary.empty,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'Firestore error:\n${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppColors.payable),
+                  ),
+                ),
+              );
+            }
 
-                  final summary = snapshot.data ?? DashboardSummary.empty;
+            final summary = snapshot.data ?? DashboardSummary.empty;
 
-                  return ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      Text(
-                        'Khata Summary',
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text(
+                  'Khata Summary',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Sab logon ka khata — live update',
-                        style: const TextStyle(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Sab logon ka khata — live update',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 20),
+                _SummaryCard(
+                  title: 'Total Receivable',
+                  subtitle: 'Lenay hain',
+                  amount: summary.totalReceivable,
+                  partyCount: summary.receivablePartyCount,
+                  color: AppColors.receivable,
+                  bgColor: AppColors.receivableLight,
+                  icon: Icons.arrow_downward,
+                ),
+                const SizedBox(height: 12),
+                _SummaryCard(
+                  title: 'Total Payable',
+                  subtitle: 'Denay hain',
+                  amount: summary.totalPayable,
+                  partyCount: summary.payablePartyCount,
+                  color: AppColors.payable,
+                  bgColor: AppColors.payableLight,
+                  icon: Icons.arrow_upward,
+                ),
+                if (summary.rawTransactionDocs > 0 &&
+                    summary.transactionCount == 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      'Firestore mein ${summary.rawTransactionDocs} documents hain '
+                      'lekin fields match nahi kar rahi. '
+                      'Har doc mein amount aur type (debit/credit) hona chahiye.',
+                      style: TextStyle(
+                        color: Colors.orange.shade800,
+                        fontSize: 12,
                       ),
-                      const SizedBox(height: 20),
-                      _SummaryCard(
-                        title: 'Total Receivable',
-                        subtitle: 'Lenay hain',
-                        amount: summary.totalReceivable,
-                        partyCount: summary.receivablePartyCount,
-                        color: AppColors.receivable,
-                        bgColor: AppColors.receivableLight,
-                        icon: Icons.arrow_downward,
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Get.toNamed(AppRoutes.ledger),
+                        icon: const Icon(Icons.people_outline),
+                        label: const Text('Khata Book'),
                       ),
-                      const SizedBox(height: 12),
-                      _SummaryCard(
-                        title: 'Total Payable',
-                        subtitle: 'Denay hain',
-                        amount: summary.totalPayable,
-                        partyCount: summary.payablePartyCount,
-                        color: AppColors.payable,
-                        bgColor: AppColors.payableLight,
-                        icon: Icons.arrow_upward,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Get.toNamed(AppRoutes.addTransaction),
+                        icon: const Icon(Icons.receipt_long),
+                        label: const Text('Add Entry'),
                       ),
-                      if (summary.rawTransactionDocs > 0 &&
-                          summary.transactionCount == 0)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: Text(
-                            'Firestore mein ${summary.rawTransactionDocs} documents hain '
-                            'lekin fields match nahi kar rahi. '
-                            'Har doc mein amount aur type (debit/credit) hona chahiye.',
-                            style: TextStyle(
-                              color: Colors.orange.shade800,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => Get.toNamed(AppRoutes.ledger),
-                              icon: const Icon(Icons.people_outline),
-                              label: const Text('Khata Book'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () =>
-                                  Get.toNamed(AppRoutes.addTransaction),
-                              icon: const Icon(Icons.receipt_long),
-                              label: const Text('Add Entry'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ],
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(

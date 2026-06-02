@@ -2,20 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:smart_khata_manager/core/config/app_constants.dart';
 import 'package:smart_khata_manager/core/config/firebase_env_config.dart';
-import 'package:smart_khata_manager/core/services/auth_service.dart';
-
-/// Result of [FirebaseService.verifyConnection] for mobile/desktop checks.
-class FirebaseConnectionTestResult {
-  const FirebaseConnectionTestResult({
-    required this.ok,
-    required this.message,
-  });
-
-  final bool ok;
-  final String message;
-}
 
 /// Central Firebase bootstrap with **offline-first** Firestore persistence.
 class FirebaseService extends GetxService {
@@ -135,69 +122,6 @@ class FirebaseService extends GetxService {
       }
     }
     return false;
-  }
-
-  /// One-tap check from dashboard — works on mobile browsers after Vercel deploy.
-  Future<FirebaseConnectionTestResult> verifyConnection() async {
-    if (!isFirestoreReady.value || _firestore == null) {
-      final retry = await initWithRetry(maxAttempts: 2);
-      if (!retry) {
-        return FirebaseConnectionTestResult(
-          ok: false,
-          message: initError.value ?? 'Firestore not initialized.',
-        );
-      }
-    }
-
-    final auth = Get.find<AuthService>();
-    if (!auth.isSignedIn) {
-      return FirebaseConnectionTestResult(
-        ok: false,
-        message: 'Sign in required to test Firestore connection.',
-      );
-    }
-
-    final userId = auth.userId;
-    if (userId == null) {
-      return const FirebaseConnectionTestResult(
-        ok: false,
-        message: 'No signed-in user. Sign in with email and password first.',
-      );
-    }
-
-    final db = _firestore!;
-    final testRef = db
-        .collection(AppConstants.usersCollection)
-        .doc(userId)
-        .collection('_meta')
-        .doc('connection');
-
-    try {
-      final snap = await testRef.get().timeout(const Duration(seconds: 15));
-
-      if (snap.exists) {
-        return FirebaseConnectionTestResult(
-          ok: true,
-          message: 'Read OK from users/$userId/_meta/connection.',
-        );
-      }
-
-      await testRef.set({
-        'ok': true,
-        'checkedAt': FieldValue.serverTimestamp(),
-        'platform': kIsWeb ? 'web' : 'native',
-      });
-
-      return FirebaseConnectionTestResult(
-        ok: true,
-        message: 'Write OK to users/$userId/_meta/connection.',
-      );
-    } catch (e) {
-      return FirebaseConnectionTestResult(
-        ok: false,
-        message: 'Firestore test failed: $e',
-      );
-    }
   }
 
   Future<void> syncPendingWrites() async {
