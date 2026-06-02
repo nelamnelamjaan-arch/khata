@@ -25,6 +25,12 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _summaryStream = Get.find<LedgerService>().watchDashboardSummary();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!Get.find<AuthService>().isSignedIn) {
+        Get.offAllNamed(AppRoutes.auth);
+      }
+    });
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,7 +11,7 @@ import 'package:smart_khata_manager/core/services/firebase_service.dart';
 import 'package:smart_khata_manager/core/services/network_service.dart';
 import 'package:smart_khata_manager/core/theme/app_colors.dart';
 
-/// Splash — waits for Firebase (with retry), then opens dashboard.
+/// Splash — initializes Firebase, then routes to auth or dashboard.
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -24,55 +26,61 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    _bootstrap();
+    scheduleMicrotask(_bootstrap);
   }
 
   Future<void> _bootstrap() async {
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _error = null;
     });
 
-    await EnvConfig.load();
-
     try {
-      await Get.find<NetworkService>().init();
-    } catch (e) {
-      if (kDebugMode) print('NetworkService init: $e');
-    }
+      await EnvConfig.load();
 
-    final firebase = Get.find<FirebaseService>();
-    final firebaseOk = firebase.isFirestoreReady.value ||
-        await firebase.initWithRetry(maxAttempts: 3);
+      try {
+        await Get.find<NetworkService>().init();
+      } catch (e) {
+        if (kDebugMode) print('NetworkService init: $e');
+      }
 
-    if (!firebaseOk) {
-      final detail = firebase.initError.value ?? 'Could not reach Firestore.';
+      final firebase = Get.find<FirebaseService>();
+      final firebaseOk = firebase.isFirestoreReady.value ||
+          await firebase.initWithRetry(maxAttempts: 3);
+
+      if (!firebaseOk) {
+        final detail =
+            firebase.initError.value ?? 'Could not connect to Firebase.';
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+          _error = detail;
+        });
+        return;
+      }
+
+      final auth = Get.find<AuthService>();
+      await auth.init();
+
+      try {
+        await Get.find<AiService>().init();
+      } catch (e) {
+        if (kDebugMode) print('AiService init: $e');
+      }
+
+      if (!mounted) return;
+      final nextRoute =
+          auth.isSignedIn ? AppRoutes.dashboard : AppRoutes.auth;
+      Get.offAllNamed(nextRoute);
+    } catch (e, stack) {
+      if (kDebugMode) print('Splash bootstrap failed: $e\n$stack');
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = detail;
+        _error = e.toString();
       });
-      return;
     }
-
-    final auth = Get.find<AuthService>();
-    await auth.init();
-
-    try {
-      await Get.find<AiService>().init();
-    } catch (e) {
-      if (kDebugMode) print('AiService init: $e');
-    }
-
-    if (!mounted) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (auth.isSignedIn) {
-        Get.offAllNamed(AppRoutes.dashboard);
-      } else {
-        Get.offAllNamed(AppRoutes.auth);
-      }
-    });
   }
 
   @override
@@ -109,7 +117,7 @@ class _SplashPageState extends State<SplashPage> {
                 Icon(Icons.cloud_off, size: 48, color: Colors.orange.shade700),
                 const SizedBox(height: 16),
                 Text(
-                  'Firebase connection failed',
+                  'Startup failed',
                   style: Theme.of(context).textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -124,8 +132,7 @@ class _SplashPageState extends State<SplashPage> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'On mobile: use normal (not private) browsing, allow site data, '
-                  'and add your Vercel URL under Firebase → Authentication → Authorized domains.',
+                  'Add khata-caet.vercel.app under Firebase → Authentication → Authorized domains, then retry.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),

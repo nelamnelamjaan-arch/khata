@@ -16,6 +16,18 @@
   -->
   <base href="$FLUTTER_BASE_HREF">
 
+  <script>
+    // Always start on splash so Firebase initializes before auth/dashboard routes.
+    (function () {
+      var hash = window.location.hash || '';
+      if (hash !== '#/splash' && hash !== '') {
+        window.location.replace(window.location.pathname + '#/splash');
+      } else if (hash === '') {
+        window.location.replace(window.location.pathname + '#/splash');
+      }
+    })();
+  </script>
+
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">

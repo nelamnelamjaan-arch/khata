@@ -468,7 +468,6 @@ class LedgerService extends GetxService {
     Stream<void> triggers() async* {
       yield null;
       yield* firebase.isFirestoreReady.stream.distinct().map((_) => null);
-      yield* auth.authStateChanges.map((_) => null);
     }
 
     return triggers().asyncExpand((_) {

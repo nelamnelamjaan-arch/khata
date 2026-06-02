@@ -15,6 +15,7 @@ class SmartKhataApp extends StatelessWidget {
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      // Always boot via splash — it initializes Firebase then routes onward.
       initialRoute: AppRoutes.splash,
       getPages: AppPages.routes,
       unknownRoute: GetPage(

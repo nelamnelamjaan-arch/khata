@@ -27,27 +27,34 @@ class PhoneVerificationSession {
 
 /// Firebase Authentication — email, Google, and phone sign-in with per-user scope.
 class AuthService extends GetxService {
-  AuthService({FirebaseAuth? auth, GoogleSignIn? googleSignIn})
-      : _auth = auth ?? FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ??
-            GoogleSignIn(
-              clientId:
-                  kIsWeb && AuthConfig.hasGoogleWebClientId
-                      ? AuthConfig.googleWebClientId
-                      : null,
-              scopes: const ['email', 'profile'],
-            );
-
-  final FirebaseAuth _auth;
-  final GoogleSignIn _googleSignIn;
+  FirebaseAuth? _auth;
+  GoogleSignIn? _googleSignIn;
 
   final Rxn<User> currentUser = Rxn<User>();
   final RxnString authError = RxnString();
 
+  FirebaseAuth get _firebaseAuth {
+    if (_auth != null) return _auth!;
+    if (Firebase.apps.isEmpty) {
+      throw StateError('Firebase is not initialized yet.');
+    }
+    _auth = FirebaseAuth.instanceFor(app: Firebase.app());
+    return _auth!;
+  }
+
+  GoogleSignIn get _google {
+    return _googleSignIn ??= GoogleSignIn(
+      clientId: kIsWeb && AuthConfig.hasGoogleWebClientId
+          ? AuthConfig.googleWebClientId
+          : null,
+      scopes: const ['email', 'profile'],
+    );
+  }
+
   String? get userId {
     if (!_isFirebaseReady) return null;
     try {
-      return _auth.currentUser?.uid;
+      return _firebaseAuth.currentUser?.uid;
     } catch (_) {
       return null;
     }
@@ -56,7 +63,7 @@ class AuthService extends GetxService {
   bool get isSignedIn {
     if (!_isFirebaseReady) return false;
     try {
-      return _auth.currentUser != null;
+      return _firebaseAuth.currentUser != null;
     } catch (_) {
       return false;
     }
@@ -64,7 +71,10 @@ class AuthService extends GetxService {
 
   bool get _isFirebaseReady => Firebase.apps.isNotEmpty;
 
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<User?> authStateChanges() {
+    if (!_isFirebaseReady) return const Stream<User?>.empty();
+    return _firebaseAuth.authStateChanges();
+  }
 
   Future<AuthService> init() async {
     if (!_isFirebaseReady) {
@@ -73,8 +83,7 @@ class AuthService extends GetxService {
     }
 
     try {
-      final user = _auth.currentUser;
-      // Legacy builds used anonymous auth — sign out so users must use email/Google/phone.
+      final user = _firebaseAuth.currentUser;
       if (user != null && user.isAnonymous) {
         try {
           await signOut();
@@ -84,7 +93,7 @@ class AuthService extends GetxService {
       } else {
         currentUser.value = user;
       }
-      _auth.authStateChanges().listen((u) => currentUser.value = u);
+      _firebaseAuth.authStateChanges().listen((u) => currentUser.value = u);
     } catch (_) {
       currentUser.value = null;
     }
@@ -99,7 +108,7 @@ class AuthService extends GetxService {
   }) async {
     authError.value = null;
     try {
-      final credential = await _auth.signInWithEmailAndPassword(
+      final credential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
@@ -117,7 +126,7 @@ class AuthService extends GetxService {
   }) async {
     authError.value = null;
     try {
-      final credential = await _auth.createUserWithEmailAndPassword(
+      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
@@ -158,7 +167,8 @@ class AuthService extends GetxService {
 
   Future<UserCredential> _signInWithGooglePopup() async {
     try {
-      final credential = await _auth.signInWithPopup(GoogleAuthProvider());
+      final credential =
+          await _firebaseAuth.signInWithPopup(GoogleAuthProvider());
       currentUser.value = credential.user;
       return credential;
     } on FirebaseAuthException catch (e) {
@@ -170,7 +180,7 @@ class AuthService extends GetxService {
   }
 
   Future<UserCredential> _signInWithGoogleSignIn() async {
-    final account = await _googleSignIn.signIn();
+    final account = await _google.signIn();
     if (account == null) {
       throw AuthCancelledException('Google sign-in was cancelled.');
     }
@@ -180,7 +190,7 @@ class AuthService extends GetxService {
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
-    final userCredential = await _auth.signInWithCredential(credential);
+    final userCredential = await _firebaseAuth.signInWithCredential(credential);
     currentUser.value = userCredential.user;
     return userCredential;
   }
@@ -203,9 +213,8 @@ class AuthService extends GetxService {
     String phoneNumber,
   ) async {
     try {
-      // Invisible reCAPTCHA modal — no DOM container required.
       final confirmationResult =
-          await _auth.signInWithPhoneNumber(phoneNumber);
+          await _firebaseAuth.signInWithPhoneNumber(phoneNumber);
       return PhoneVerificationSession(
         phoneNumber: phoneNumber,
         confirmationResult: confirmationResult,
@@ -221,13 +230,14 @@ class AuthService extends GetxService {
   ) async {
     final completer = Completer<PhoneVerificationSession>();
 
-    await _auth.verifyPhoneNumber(
+    await _firebaseAuth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       timeout: const Duration(seconds: 60),
       verificationCompleted: (PhoneAuthCredential credential) async {
         if (completer.isCompleted) return;
         try {
-          final userCredential = await _auth.signInWithCredential(credential);
+          final userCredential =
+              await _firebaseAuth.signInWithCredential(credential);
           currentUser.value = userCredential.user;
           completer.completeError(
             PhoneAutoVerifiedException(userCredential),
@@ -279,7 +289,8 @@ class AuthService extends GetxService {
         verificationId: session.verificationId!,
         smsCode: code,
       );
-      final userCredential = await _auth.signInWithCredential(credential);
+      final userCredential =
+          await _firebaseAuth.signInWithCredential(credential);
       currentUser.value = userCredential.user;
       return userCredential;
     } on FirebaseAuthException catch (e) {
@@ -291,9 +302,11 @@ class AuthService extends GetxService {
   // ── Sign out ──────────────────────────────────────────────────────────────
 
   Future<void> signOut() async {
-    await _auth.signOut();
+    if (_isFirebaseReady) {
+      await _firebaseAuth.signOut();
+    }
     try {
-      await _googleSignIn.signOut();
+      await _googleSignIn?.signOut();
     } catch (_) {}
     currentUser.value = null;
     authError.value = null;
